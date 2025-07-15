@@ -10,8 +10,8 @@ public sealed class BiliLiveClient(BiliApiClient client)
     public async Task<LiveRoomInfoData> GetRoomInfoAsync(int roomId, CancellationToken cancellationToken = default)
         => await client.GetAsync<LiveRoomInfoData>($"https://api.live.bilibili.com/room/v1/Room/get_info?room_id={roomId}", cancellationToken);
 
-    public async Task<JsonElement> GetRoomInfoOldAsync(long mid, CancellationToken cancellationToken = default)
-        => await client.GetAsync<JsonElement>($"https://api.live.bilibili.com/room/v1/Room/getRoomInfoOld?mid={mid}", cancellationToken);
+    public async Task<LiveRoomInfoDataFromMid> GetRoomInfoOldAsync(long mid, CancellationToken cancellationToken = default)
+        => await client.GetAsync<LiveRoomInfoDataFromMid>($"https://api.live.bilibili.com/room/v1/Room/getRoomInfoOld?mid={mid}", cancellationToken);
 
     public async Task<JsonElement> GetRoomInitAsync(int id, CancellationToken cancellationToken = default)
         => await client.GetAsync<JsonElement>($"https://api.live.bilibili.com/room/v1/Room/room_init?id={id}", cancellationToken);
@@ -24,8 +24,8 @@ public sealed class BiliLiveClient(BiliApiClient client)
     public async Task<JsonElement> GetStreamerInfoAsync(string req_biz, int roomId, CancellationToken cancellationToken = default)
         => await GetStreamerInfoAsync(req_biz, [roomId], cancellationToken);
 
-    public async Task<LiveAreaCategory> GetAreaListAsync(CancellationToken cancellationToken = default)
-        => await client.GetAsync<LiveAreaCategory>($"https://api.live.bilibili.com/room/v1/Area/getList", cancellationToken);
+    public async Task<IReadOnlyList<LiveAreaCategory>> GetAreaListAsync(CancellationToken cancellationToken = default)
+        => await client.GetAsync<IReadOnlyList<LiveAreaCategory>>($"https://api.live.bilibili.com/room/v1/Area/getList", cancellationToken);
 
     public async Task<JsonElement> UpdateStreamInfoAsync(
         int roomId,
@@ -65,7 +65,7 @@ public sealed class BiliLiveClient(BiliApiClient client)
     }
 
 
-    public async Task<JsonElement> StartStreamAsync(int roomId, int areaId, string platform = "pc_link", CancellationToken cancellationToken = default)
+    public async Task<StartLiveData> StartStreamAsync(int roomId, int areaId, string platform = "pc_link", CancellationToken cancellationToken = default)
     {
         const string url = "https://api.live.bilibili.com/room/v1/Room/startLive";
 
@@ -80,7 +80,7 @@ public sealed class BiliLiveClient(BiliApiClient client)
             ["csrf_token"] = csrf,
         };
 
-        return await client.PostFormAsync<JsonElement>(url, form, cancellationToken);
+        return await client.PostFormAsync<StartLiveData>(url, form, cancellationToken);
     }
 
     public async Task<JsonElement> StopStreamAsync(int roomId, string platform = "pc_link", CancellationToken cancellationToken = default)

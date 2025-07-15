@@ -85,6 +85,8 @@ public sealed class BiliApiClient
             case 0:
                 Debug.Assert(data.Data is not null);
                 return data.Data;
+            case -101 when data.Data is not null: // 账号未登录
+                return data.Data;
             case -352:
                 throw new BiliApiException("-352 风控校验失败");
             default:
@@ -154,18 +156,14 @@ public sealed class BiliApiClient
 
     public async Task<Dictionary<string, string>> EncryptWbiAsync(Dictionary<string, string> parameters, CancellationToken cancellationToken = default)
     {
-        var (img, sub) = await GetWbiKeysAsync(cancellationToken);
+        var person = await GetPersonDataAsync(cancellationToken);
+
+        var (img, sub) = (Path.GetFileNameWithoutExtension(person.WbiImg.ImgUrl), Path.GetFileNameWithoutExtension(person.WbiImg.SubUrl));
         return EncryptWbi(parameters, img, sub);
     }
-    public async Task<(string Img, string Sub)> GetWbiKeysAsync(CancellationToken cancellationToken = default)
-    {
-        var data = await GetAsync<JsonElement>("https://api.bilibili.com/x/web-interface/nav", cancellationToken);
 
-        var wbi = data.GetProperty("wbi_img").Deserialize<WbiImg>()
-            ?? throw new InvalidOperationException();
-
-        return (Path.GetFileNameWithoutExtension(wbi.ImgUrl), Path.GetFileNameWithoutExtension(wbi.SubUrl));
-    }
+    public async Task<PersonData> GetPersonDataAsync(CancellationToken cancellationToken = default)
+        => await GetAsync<PersonData>("https://api.bilibili.com/x/web-interface/nav", cancellationToken);
 
     public async Task RefreshBuvidAsync(CancellationToken cancellationToken = default)
     {

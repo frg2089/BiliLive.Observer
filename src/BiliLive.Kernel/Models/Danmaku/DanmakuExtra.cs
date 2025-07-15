@@ -50,7 +50,7 @@ public sealed record class DanmakuExtra(
 );
 
 
-public record Base(
+public sealed record class Base(
     [property: JsonPropertyName("face")] string Face,
     [property: JsonPropertyName("is_mystery")] bool? IsMystery,
     [property: JsonPropertyName("name")] string Name,
@@ -61,35 +61,35 @@ public record Base(
     [property: JsonPropertyName("risk_ctrl_info")] object RiskCtrlInfo
 );
 
-public record GuardLeader(
+public sealed record class GuardLeader(
     [property: JsonPropertyName("is_guard_leader")] bool? IsGuardLeader
 );
 
-public record OfficialInfo(
+public sealed record class OfficialInfo(
     [property: JsonPropertyName("desc")] string Desc,
     [property: JsonPropertyName("role")] int? Role,
     [property: JsonPropertyName("title")] string Title,
     [property: JsonPropertyName("type")] int? Type
 );
 
-public record OriginInfo(
+public sealed record class OriginInfo(
     [property: JsonPropertyName("face")] string Face,
     [property: JsonPropertyName("name")] string Name
 );
 
-public record DanmakuInfo(
+public sealed record class DanmakuInfo(
     [property: JsonPropertyName("extra")] string Extra,
     [property: JsonPropertyName("mode")] int? Mode,
     [property: JsonPropertyName("show_player_type")] int? ShowPlayerType,
     [property: JsonPropertyName("user")] User User
 );
 
-public record Title(
+public sealed record class Title(
     [property: JsonPropertyName("old_title_css_id")] string OldTitleCssId,
     [property: JsonPropertyName("title_css_id")] string TitleCssId
 );
 
-public record User(
+public sealed record class User(
     [property: JsonPropertyName("base")] Base Base,
     [property: JsonPropertyName("guard")] object Guard,
     [property: JsonPropertyName("guard_leader")] GuardLeader GuardLeader,

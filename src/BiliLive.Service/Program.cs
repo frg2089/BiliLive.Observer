@@ -54,27 +54,70 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.MapStaticAssets();
+app.UseDefaultFiles();
+app.MapFallbackToFile("/index.html");
+
+
 var bili = app.MapGroup("/bili");
 
-bili.MapGet("/login", async ([FromServices] BiliLoginClient login, CancellationToken cancellationToken)
-    => TypedResults.Ok((string?)await login.GenerateQRCodeAsync(cancellationToken)));
+bili.MapGet("/current", async ([FromServices] BiliApiClient client, CancellationToken cancellationToken) =>
+    TypedResults.Ok(await client.GetPersonDataAsync(cancellationToken)));
 
-bili.MapGet("/login/poll", async ([FromServices] BiliLoginClient login, CancellationToken cancellationToken)
-    => TypedResults.Ok(await login.LoginWithQRCodeAsync(cancellationToken)));
+bili.MapGet("/avatar", async ([FromServices] BiliApiClient client, [FromServices] HttpClient http, CancellationToken cancellationToken) =>
+{
+    var person = await client.GetPersonDataAsync(cancellationToken);
+
+    var res = await http.GetAsync(person.Face, cancellationToken);
+
+    var data = await res.Content.ReadAsByteArrayAsync(cancellationToken);
+
+    return TypedResults.File(data, res.Content.Headers.ContentType?.ToString());
+});
+
+bili.MapGet("/login", async ([FromServices] BiliLoginClient login, CancellationToken cancellationToken)
+    => TypedResults.Ok(await login.GenerateQRCodeAsync(cancellationToken)));
+
+bili.MapGet("/login/poll", async ([FromQuery] string qrcodeKey, [FromServices] BiliLoginClient login, [FromServices] IConfiguration configuration, CancellationToken cancellationToken) =>
+{
+    var status = await login.LoginWithQRCodeAsync(qrcodeKey, cancellationToken);
+
+    if (status is QRCodeStatus.Confirmed)
+    {
+        var path = configuration.GetValue<string>("Cookie");
+        if (string.IsNullOrWhiteSpace(path))
+            throw new InvalidDataException("cookie 文件路径未设置");
+
+        await using var fs = File.Create(path);
+        await cookie.SaveToAsync(fs, cancellationToken: cancellationToken);
+    }
+    return TypedResults.Ok(status);
+});
 
 var live = bili.MapGroup("/live");
 
-live.MapPost("/start", async ([FromBody] StartLiveRequest request, [FromServices] BiliLiveClient live, CancellationToken cancellationToken) =>
-{
-    await live.StartStreamAsync(request.RoomId, request.AreaId, cancellationToken: cancellationToken);
-    return TypedResults.Ok();
-});
+live.MapGet("/info", async ([FromQuery] int roomId, [FromServices] BiliLiveClient live, CancellationToken cancellationToken)
+    => TypedResults.Ok(await live.GetRoomInfoAsync(roomId, cancellationToken)));
 
-live.MapPost("/stop", async ([FromBody] StartLiveRequest request, [FromServices] BiliLiveClient live, CancellationToken cancellationToken) =>
-{
-    await live.StopStreamAsync(request.RoomId, cancellationToken: cancellationToken);
-    return TypedResults.Ok();
-});
+live.MapGet("/infoByUid", async ([FromQuery] long userId, [FromServices] BiliLiveClient live, CancellationToken cancellationToken)
+    => TypedResults.Ok(await live.GetRoomInfoOldAsync(userId, cancellationToken)));
+
+live.MapGet("/areas", async ([FromServices] BiliLiveClient live, CancellationToken cancellationToken)
+    => TypedResults.Ok(await live.GetAreaListAsync(cancellationToken)));
+
+live.MapPost("/start", async ([FromBody] StartLiveRequest request, [FromServices] BiliLiveClient live, CancellationToken cancellationToken)
+    => TypedResults.Ok(await live.StartStreamAsync(request.RoomId, request.AreaId, cancellationToken: cancellationToken)));
+
+live.MapPost("/stop", async ([FromBody] StartLiveRequest request, [FromServices] BiliLiveClient live, CancellationToken cancellationToken)
+    => TypedResults.Ok(await live.StopStreamAsync(request.RoomId, cancellationToken: cancellationToken)));
+
+live.MapPost("/update", async ([FromBody] UpdateLiveRequest request, [FromServices] BiliLiveClient live, CancellationToken cancellationToken)
+    => TypedResults.Ok(await live.UpdateStreamInfoAsync(
+        request.RoomId,
+        request.Platform, request.VisitId,
+        request.Title, request.AreaId,
+        request.AddTag, request.DelTag,
+        cancellationToken)));
 
 var chat = live.MapGroup("/chat");
 chat.MapPost("/send", async ([FromBody] SendChatRequest request, [FromServices] BiliLiveClient live, CancellationToken cancellationToken) =>

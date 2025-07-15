@@ -1,0 +1,48 @@
+{
+  "name": "@bililive/workspace",
+  "version": "0.0.0",
+  "author": {
+    "name": "frg2089",
+    "email": "frg2089@outlook.com",
+    "url": "https://blog.shimakaze.dev"
+  },
+  "license": "MIT",
+  "private": true,
+  "packageManager": "pnpm@10.13.1+sha512.37ebf1a5c7a30d5fabe0c5df44ee8da4c965ca0c5af3dbab28c3a1681b70a256218d05c81c9c0dcf767ef6b8551eb5b960042b9ed4300c59242336377e01cfad",
+  "keywords": [],
+  "scripts": {
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "prettier-plugin-imports": "^4.3.3",
+    "prettier-plugin-pkg": "^0.21.1",
+    "typescript": "^5.8.3"
+  },
+  "prettier": {
+    "printWidth": 80,
+    "tabWidth": 2,
+    "useTabs": false,
+    "semi": false,
+    "singleQuote": true,
+    "quoteProps": "as-needed",
+    "jsxSingleQuote": false,
+    "trailingComma": "all",
+    "bracketSpacing": true,
+    "bracketSameLine": true,
+    "arrowParens": "avoid",
+    "endOfLine": "auto",
+    "importOrder": [
+      "<BUILTIN_MODULES>",
+      " ",
+      "^vue$|^vuepress",
+      "<THIRD_PARTY_MODULES>",
+      " ",
+      "^[.]"
+    ],
+    "plugins": [
+      "prettier-plugin-imports",
+      "prettier-plugin-pkg"
+    ]
+  }
+}

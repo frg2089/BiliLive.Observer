@@ -3,12 +3,12 @@
 
 namespace BiliLive.Kernel.Models;
 
-public record LiveAreaCategory(
+public sealed record class LiveAreaCategory(
     [property: JsonPropertyName("id")] int? Id,
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("list")] IReadOnlyList<LiveAreaInfo> List
 );
-public record LiveAreaInfo(
+public sealed record class LiveAreaInfo(
     [property: JsonPropertyName("id")] string Id,
     [property: JsonPropertyName("parent_id")] string ParentId,
     [property: JsonPropertyName("old_area_id")] string OldAreaId,

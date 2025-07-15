@@ -3,18 +3,14 @@
 namespace BiliLive.Kernel;
 public sealed class BiliLoginClient(BiliApiClient client)
 {
-    private BiliPassportQRCodeData? _data;
-
     /// <summary>
     /// 获取登录二维码
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<string> GenerateQRCodeAsync(CancellationToken cancellationToken = default)
+    public async Task<BiliPassportQRCodeData> GenerateQRCodeAsync(CancellationToken cancellationToken = default)
     {
-        _data = await client.GetAsync<BiliPassportQRCodeData>("https://passport.bilibili.com/x/passport-login/web/qrcode/generate\r\n\r\n", cancellationToken);
-
-        return _data.Url;
+        return await client.GetAsync<BiliPassportQRCodeData>("https://passport.bilibili.com/x/passport-login/web/qrcode/generate", cancellationToken);
     }
 
     /// <summary>
@@ -24,12 +20,9 @@ public sealed class BiliLoginClient(BiliApiClient client)
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     /// <exception cref="Exception"></exception>
-    public async Task<QRCodeStatus> LoginWithQRCodeAsync(CancellationToken cancellationToken = default)
+    public async Task<QRCodeStatus> LoginWithQRCodeAsync(string qrcodeKey, CancellationToken cancellationToken = default)
     {
-        if (_data is null)
-            throw new InvalidOperationException("未获取二维码");
-
-        var result = await client.GetAsync<BiliQRCodeLoginStatusData>($"https://passport.bilibili.com/x/passport-login/web/qrcode/poll?qrcode_key={_data.QRCodeKey}", cancellationToken);
+        var result = await client.GetAsync<BiliQRCodeLoginStatusData>($"https://passport.bilibili.com/x/passport-login/web/qrcode/poll?qrcode_key={qrcodeKey}", cancellationToken);
 
         return result.Code switch
         {
@@ -48,9 +41,9 @@ public sealed class BiliLoginClient(BiliApiClient client)
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     /// <exception cref="Exception"></exception>
-    public async Task PollUntilLoginSucceedsAsync(CancellationToken cancellationToken = default)
+    public async Task PollUntilLoginSucceedsAsync(string qrcodeKey, CancellationToken cancellationToken = default)
     {
-        while (await LoginWithQRCodeAsync(cancellationToken) is not QRCodeStatus.Confirmed)
+        while (await LoginWithQRCodeAsync(qrcodeKey, cancellationToken) is not QRCodeStatus.Confirmed)
             await Task.Delay(TimeSpan.FromSeconds(1.5), cancellationToken);
     }
 

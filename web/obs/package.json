@@ -1,0 +1,33 @@
+{
+  "name": "@bililive/obs",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "fetch-api": "NODE_TLS_REJECT_UNAUTHORIZED=0 openapi-typescript https://localhost:7073/openapi/v1.json -o ./obj/apis.d.ts"
+  },
+  "dependencies": {
+    "obs-websocket-js": "^5.0.6",
+    "openapi-fetch": "^0.14.0",
+    "pinia": "^3.0.3",
+    "pinia-plugin-persistedstate": "^4.4.1",
+    "qrcode.vue": "^3.6.0",
+    "vue": "^3.5.17",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@tsconfig/node22": "^22.0.2",
+    "@types/obs-studio": "^2.17.2",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "@vue/tsconfig": "^0.7.0",
+    "openapi-typescript": "^7.8.0",
+    "sass": "^1.89.2",
+    "unocss": "^66.3.3",
+    "unplugin-auto-import": "^19.3.0",
+    "unplugin-vue-components": "^28.8.0",
+    "unplugin-vue-router": "^0.14.0",
+    "vite": "^7.0.4",
+    "vue-tsc": "^3.0.1"
+  }
+}

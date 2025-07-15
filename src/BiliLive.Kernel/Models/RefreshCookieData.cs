@@ -3,7 +3,7 @@
 
 namespace BiliLive.Kernel.Models;
 
-public sealed record RefreshCookieData(
+public sealed record class RefreshCookieData(
     [property: JsonPropertyName("refresh")] bool Refresh,
     [property: JsonPropertyName("timestamp")] long Timestamp
 )

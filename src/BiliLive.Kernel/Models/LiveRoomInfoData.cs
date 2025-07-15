@@ -1,7 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
 namespace BiliLive.Kernel.Models;
-
 public sealed record class LiveRoomInfoData(
     [property: JsonPropertyName("uid")] long Uid,
     [property: JsonPropertyName("room_id")] int RoomId,
@@ -42,7 +41,7 @@ public sealed record class LiveRoomInfoData(
     [property: JsonPropertyName("studio_info")] StudioInfo StudioInfo
 );
 
-public record Frame(
+public sealed record class Frame(
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("value")] string Value,
     [property: JsonPropertyName("position")] int? Position,
@@ -54,7 +53,7 @@ public record Frame(
     [property: JsonPropertyName("use_old_area")] bool? UseOldArea
 );
 
-public record MobileFrame(
+public sealed record class MobileFrame(
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("value")] string Value,
     [property: JsonPropertyName("position")] int? Position,
@@ -66,7 +65,7 @@ public record MobileFrame(
     [property: JsonPropertyName("use_old_area")] bool? UseOldArea
 );
 
-public record NewPendants(
+public sealed record class NewPendants(
     [property: JsonPropertyName("frame")] Frame Frame,
     [property: JsonPropertyName("badge")] object Badge,
     [property: JsonPropertyName("mobile_frame")] MobileFrame MobileFrame,
@@ -74,7 +73,7 @@ public record NewPendants(
 );
 
 
-public record StudioInfo(
+public sealed record class StudioInfo(
     [property: JsonPropertyName("status")] int? Status,
     [property: JsonPropertyName("master_list")] IReadOnlyList<object> MasterList
 );
