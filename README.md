@@ -4,7 +4,7 @@
 
 用于嵌入 OBS 中实现一站式 B 站开播。债见，Bilibili 直播姬（
 
-![screenshot](./imgs/screenshot.webp)
+![screenshot](./.github/imgs/screenshot.webp)
 
 ## Usage 食用方法
 
@@ -33,7 +33,7 @@ info: Microsoft.Hosting.Lifetime[0]
 
 接下来打开 OBS。以`v31.1.1`版本为例：在菜单栏找到“停靠窗口”，点击里边的“自定义浏览器停靠窗口”，为这项服务新增停靠窗口：
 
-![在 OBS 里添置该插件](./imgs/to_addin_plugin.webp)
+![在 OBS 里添置该插件](./.github/imgs/to_addin_plugin.webp)
 
 点击应用，初次添置应该就能看到一个悬浮窗口显示登录 B 站的二维码（
 
@@ -43,7 +43,7 @@ info: Microsoft.Hosting.Lifetime[0]
 
 开启 WebSocket 服务之后，点开插件的 OBS 设置，把刚刚的密码粘贴进去，点击连接。重新回到 WebSocket 服务器设置，这时应能看到一个已连接的 WebSocket 会话。
 
-![WebSocket 会话](./imgs/websockets.webp)
+![WebSocket 会话](./.github/imgs/websockets.webp)
 
 然后扫码登录 Bilibili 账号，点开“直播间设置”，选好直播分区，“更新设置”，于是就可以开播辣。
 
