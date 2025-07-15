@@ -3,7 +3,7 @@
     /// 建议在 OBS 中作为 浏览器停靠窗口使用 ///
   </div>
   <details flex flex-col items-center>
-    <summary>OSB 设置</summary>
+    <summary>OBS 设置</summary>
 
     <div flex flex-col>
       <label for="host">OBS 主机</label>
