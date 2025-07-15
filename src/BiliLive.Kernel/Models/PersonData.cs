@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace BiliLive.Kernel.Models;
 
@@ -11,7 +12,7 @@ public sealed record class PersonData(
     [property: JsonPropertyName("level_info")] LevelInfo LevelInfo,
     [property: JsonPropertyName("mid")] int? Mid,
     [property: JsonPropertyName("mobile_verified")] int? MobileVerified,
-    [property: JsonPropertyName("money")] int? Money,
+    [property: JsonPropertyName("money")] double? Money,
     [property: JsonPropertyName("moral")] int? Moral,
     [property: JsonPropertyName("official")] Official Official,
     [property: JsonPropertyName("officialVerify")] OfficialVerify OfficialVerify,
@@ -73,7 +74,7 @@ public sealed record class LevelInfo(
     [property: JsonPropertyName("current_level")] int? CurrentLevel,
     [property: JsonPropertyName("current_min")] int? CurrentMin,
     [property: JsonPropertyName("current_exp")] int? CurrentExp,
-    [property: JsonPropertyName("next_exp")] string NextExp
+    [property: JsonPropertyName("next_exp")] JsonElement NextExp
 );
 
 public sealed record class Official(

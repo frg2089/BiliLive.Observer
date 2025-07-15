@@ -37,7 +37,7 @@ public sealed class BiliLiveClient(BiliApiClient client)
         string? delTag = default,
         CancellationToken cancellationToken = default)
     {
-        const string url = "https://api.live.bilibili.com/room/v1/Room/startLive";
+        const string url = "https://api.live.bilibili.com/room/v1/Room/update";
 
         var csrf = client.GetCSRF();
 
