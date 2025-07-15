@@ -1,0 +1,45 @@
+name: 构建
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: latest
+          cache: pnpm
+
+      - name: Setup .NET Core SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install Frontend dependencies
+        run: pnpm install
+
+      - name: Build Frontend
+        run: pnpm --recursive build
+
+      - name: Restore .NET
+        run: dotnet restore --graph --artifacts-path artifacts
+
+      - name: Build .NET
+        run: dotnet build --graph --artifacts-path artifacts --configuration Release --no-restore
+
+      - name: Publish .NET
+        run: dotnet publish --graph --artifacts-path artifacts --configuration Release --no-restore --no-build
+
+      - name: Collect artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact
+          path: |
+            artifacts\publish\BiliLive.Service\release\*
+          retention-days: 7
