@@ -54,7 +54,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapStaticAssets();
+app.UseStaticFiles();
+//app.MapStaticAssets();
 app.UseDefaultFiles();
 app.MapFallbackToFile("/index.html");
 
