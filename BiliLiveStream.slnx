@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="src/BiliLiveStream.Kernel.TestApp/BiliLiveStream.Kernel.TestApp.csproj" />
-  <Project Path="src/BiliLiveStream.Kernel/BiliLiveStream.Kernel.csproj" />
-</Solution>

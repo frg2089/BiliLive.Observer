@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/BiliLive.Kernel/BiliLive.Kernel.csproj" />
+  <Project Path="src/BiliLive.Service/BiliLive.Service.csproj" />
+</Solution>
