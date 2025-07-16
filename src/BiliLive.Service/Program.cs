@@ -65,15 +65,11 @@ var bili = app.MapGroup("/bili");
 bili.MapGet("/current", async ([FromServices] BiliApiClient client, CancellationToken cancellationToken) =>
     TypedResults.Ok(await client.GetPersonDataAsync(cancellationToken)));
 
-bili.MapGet("/avatar", async ([FromServices] BiliApiClient client, [FromServices] HttpClient http, CancellationToken cancellationToken) =>
+bili.MapGet("/get", async ([FromQuery] string url, [FromServices] HttpClient http, CancellationToken cancellationToken) =>
 {
-    var person = await client.GetPersonDataAsync(cancellationToken);
+    var res = await http.GetAsync(url, cancellationToken);
 
-    var res = await http.GetAsync(person.Face, cancellationToken);
-
-    var data = await res.Content.ReadAsByteArrayAsync(cancellationToken);
-
-    return TypedResults.File(data, res.Content.Headers.ContentType?.ToString());
+    return TypedResults.File(res.Content.ReadAsStream(cancellationToken), res.Content.Headers.ContentType?.ToString());
 });
 
 bili.MapGet("/login", async ([FromServices] BiliLoginClient login, CancellationToken cancellationToken)

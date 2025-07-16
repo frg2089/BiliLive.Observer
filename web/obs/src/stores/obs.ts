@@ -13,11 +13,28 @@ export const useOBS = defineStore(
       password: '',
     })
     const url = computed(() => `ws://${config.host}:${config.port}`)
+    const connecting = ref(false)
+    const connected = ref(false)
+
+    client.on('ConnectionOpened', () => (connected.value = true))
+    client.on('ConnectionClosed', () => (connected.value = false))
 
     const connect = async () => {
-      await client.disconnect()
+      connecting.value = true
+      try {
+        await client.connect(url.value, config.password)
+      } finally {
+        connecting.value = false
+      }
+    }
 
-      await client.connect(url.value, config.password)
+    const disconnect = async () => {
+      connecting.value = true
+      try {
+        await client.disconnect()
+      } finally {
+        connecting.value = false
+      }
     }
 
     const startStream = async (rtmp: components['schemas']['RTMP']) => {
@@ -40,7 +57,10 @@ export const useOBS = defineStore(
       client,
       config,
       url,
+      connecting,
+      connected,
       connect,
+      disconnect,
       startStream,
       stopStream,
     }
