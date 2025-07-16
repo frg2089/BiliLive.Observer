@@ -1,0 +1,135 @@
+<Project>
+
+  <Target
+    Name="_ResolveMultiAppHostRuntimeIdentifier" 
+    BeforeTargets="_ResolveMultiAppHost"
+    Condition="'$(MultiAppHostRuntimeIdentifiers)' != ''">
+    <ItemGroup>
+      <!-- 转换 Property 为 Item -->
+      <MultiAppHostRuntimeIdentifier Include="$(MultiAppHostRuntimeIdentifiers)" />
+    </ItemGroup>
+  </Target>
+
+  <Target
+    Name="_ResolveMultiAppHost"
+    BeforeTargets="CollectPackageReferences;CollectPackageDownloads"
+    DependsOnTargets="_GetRestoreSettings"
+    Outputs="%(MultiAppHostRuntimeIdentifier.Identity)"
+    Condition="'$(MultiAppHostRuntimeIdentifiers)' != ''">
+    <ResolveAppHosts
+      TargetFrameworkIdentifier="$(TargetFrameworkIdentifier)"
+      TargetFrameworkVersion="$(_TargetFrameworkVersionWithoutV)"
+      TargetingPackRoot="$(NetCoreTargetingPackRoot)"
+      AppHostRuntimeIdentifier="%(MultiAppHostRuntimeIdentifier.Identity)"
+      OtherRuntimeIdentifiers="$(RuntimeIdentifiers)"
+      RuntimeFrameworkVersion="$(RuntimeFrameworkVersion)"
+      PackAsToolShimRuntimeIdentifiers="@(_PackAsToolShimRuntimeIdentifiers)"
+      DotNetAppHostExecutableNameWithoutExtension="$(_DotNetAppHostExecutableNameWithoutExtension)"
+      DotNetSingleFileHostExecutableNameWithoutExtension="$(_DotNetSingleFileHostExecutableNameWithoutExtension)"
+      DotNetComHostLibraryNameWithoutExtension="$(_DotNetComHostLibraryNameWithoutExtension)"
+      DotNetIjwHostLibraryNameWithoutExtension="$(_DotNetIjwHostLibraryNameWithoutExtension)"
+      RuntimeGraphPath="$(RuntimeIdentifierGraphPath)"
+      KnownAppHostPacks="@(KnownAppHostPack)"
+      NuGetRestoreSupported="$(_NuGetRestoreSupported)"
+      EnableAppHostPackDownload="$(EnableAppHostPackDownload)"
+      NetCoreTargetingPackRoot="$(NetCoreTargetingPackRoot)">
+
+      <Output TaskParameter="PackagesToDownload" ItemName="_MPackageToDownload" />
+      <Output TaskParameter="AppHost" ItemName="AppHostPack" />
+      <Output TaskParameter="SingleFileHost" ItemName="SingleFileHostPack" />
+      <Output TaskParameter="ComHost" ItemName="ComHostPack" />
+      <Output TaskParameter="IjwHost" ItemName="IjwHostPack" />
+      <Output TaskParameter="PackAsToolShimAppHostPacks" ItemName="PackAsToolShimAppHostPack" />
+
+    </ResolveAppHosts>
+
+    <!-- 当包不存在时下载包 -->
+    <PropertyGroup Condition="'$(UsePackageDownload)' == ''">
+      <UsePackageDownload Condition="'$(MSBuildRuntimeType)' == 'Core'">true</UsePackageDownload>
+      <UsePackageDownload Condition="'$(PackageDownloadSupported)' == 'true'">true</UsePackageDownload>
+      <UsePackageDownload Condition="'$(UsePackageDownload)' == ''">false</UsePackageDownload>
+    </PropertyGroup>
+
+
+    <ItemGroup Condition="'$(UsePackageDownload)' == 'true'">
+      <PackageDownload Include="@(_MPackageToDownload)">
+        <Version>[%(_MPackageToDownload.Version)]</Version>
+      </PackageDownload>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(UsePackageDownload)' != 'true'">
+      <PackageReference Include="@(_MPackageToDownload)"
+        IsImplicitlyDefined="true"
+        PrivateAssets="all"
+        ExcludeAssets="all" />
+    </ItemGroup>
+
+    <!-- Add implicit package references that don't already exist in PackageReference. -->
+    <ItemGroup>
+      <_ImplicitPackageReference Remove="@(PackageReference)" />
+      <PackageReference Include="@(_ImplicitPackageReference)"
+        IsImplicitlyDefined="true"
+        PrivateAssets="all" />
+    </ItemGroup>
+
+    <PropertyGroup>
+      <_AppHostSourcePath Condition="'%(AppHostPack.Path)' != ''">%(AppHostPack.Path)</_AppHostSourcePath>
+      <!-- 由于 AppHost 可能是从 Nuget.Org 中现下载的，此时 AppHostPack.Path 为空，需要特殊处理。 -->
+      <_AppHostSourcePath Condition="'%(AppHostPack.Path)' == ''">%(AppHostPack.NuGetPackageId)</_AppHostSourcePath>
+      <_AppHostSourcePath Condition="'%(AppHostPack.Path)' == ''">$(_OutputPackagesPath)\$(_AppHostSourcePath.ToLower())\%(AppHostPack.NuGetPackageVersion)\%(AppHostPack.PathInPackage)</_AppHostSourcePath>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <MultiAppHost Include="@(MultiAppHostRuntimeIdentifier -> '$(IntermediateOutputPath)AppHosts\%(Identity)$([System.IO.Path]::GetExtension($(_AppHostSourcePath)))')">
+        <AppHostSourcePath>$(_AppHostSourcePath)</AppHostSourcePath>
+        <AppHostSuffix>%(Identity)$([System.IO.Path]::GetExtension($(_AppHostSourcePath)))</AppHostSuffix>
+        <AppHostRuntimeIdentifier>%(Identity)</AppHostRuntimeIdentifier>
+      </MultiAppHost>
+    </ItemGroup>
+  </Target>
+
+  <Target
+    Name="_CreateMultiAppHost"
+    DependsOnTargets="_ResolveMultiAppHost"
+    BeforeTargets="AfterCompile"
+    Inputs="@(MultiAppHost -> '%(AppHostSourcePath)')"
+    Outputs="@(MultiAppHost -> '%(Identity)')"
+  >
+    <MakeDir Directories="$(IntermediateOutputPath)AppHosts" />
+    <CreateAppHost
+      AppHostSourcePath="%(MultiAppHost.AppHostSourcePath)"
+      AppHostDestinationPath="%(MultiAppHost.Identity)"
+      AppBinaryName="$(AssemblyName)$(TargetExt)"
+      IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')"
+      WindowsGraphicalUserInterface="$(_UseWindowsGraphicalUserInterface)"
+      Retries="$(CopyRetryCount)"
+      RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
+      EnableMacOSCodeSign="$(_EnableMacOSCodeSign)"
+    />
+  </Target>
+
+  <Target
+    Name="_CopyMultiAppHostToOutputDirectory"
+    DependsOnTargets="_CreateMultiAppHost"
+    AfterTargets="CopyFilesToOutputDirectory"
+    Inputs="@(MultiAppHost)"
+    Outputs="@(MultiAppHost -> '$(OutputPath)$(AssemblyName).%(AppHostSuffix)')"
+  >
+    <Copy
+      SourceFiles="@(MultiAppHost)"
+      DestinationFiles="@(MultiAppHost -> '$(OutputPath)$(AssemblyName).%(AppHostSuffix)')" />
+  </Target>
+
+  <Target
+    Name="_CopyMultiAppHostToPublishDirectory"
+    DependsOnTargets="_CreateMultiAppHost"
+    AfterTargets="CopyFilesToPublishDirectory"
+    Inputs="@(MultiAppHost)"
+    Outputs="@(MultiAppHost -> '$(PublishDir)$(AssemblyName).%(AppHostSuffix)')"
+  >
+    <Copy
+      SourceFiles="@(MultiAppHost)"
+      DestinationFiles="@(MultiAppHost -> '$(PublishDir)$(AssemblyName).%(AppHostSuffix)')" />
+  </Target>
+
+</Project>
