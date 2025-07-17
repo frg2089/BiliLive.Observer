@@ -10,10 +10,13 @@
     。
   </div>
   <NSpin :show="loading">
-    <div v-if="data" mx-auto px-2>
-      <Avatar mx-auto :face="data.face" :frame="data.pendant.image_enhance" />
+    <div v-if="user.data" mx-auto px-2>
+      <Avatar
+        mx-auto
+        :face="user.data.face"
+        :frame="user.data.pendant.image_enhance" />
       <h2 text-center text-lg>
-        {{ data.uname }}
+        {{ user.data.uname }}
       </h2>
       <div flex flex-col justify-center gap-2 my-2>
         <NButton
@@ -82,25 +85,44 @@ import type { CascaderOption } from 'naive-ui'
 import type { components } from '../../obj/apis'
 import { client } from '../api'
 import { useOBS } from '../stores/obs'
+import { useUser } from '../stores/user'
 
 const inOBS = !!window?.obsstudio?.pluginVersion
 const obs = useOBS()
+const user = useUser()
 const loading = ref(false)
 const btnLoading = ref(false)
 
-const data = ref<components['schemas']['PersonData']>()
 const liveRoom = reactive({
   roomId: 0,
   areaId: 0,
   title: '',
 })
 
+const options = computed(
+  () =>
+    user.areas?.map(
+      i =>
+        ({
+          label: i.name,
+          value: Number(i.id),
+          children: i.list.map(
+            i =>
+              ({
+                label: i.name,
+                value: Number(i.id),
+              }) as CascaderOption,
+          ),
+        }) as CascaderOption,
+    ) ?? [],
+)
+
 const updateRoomInfoByUserId = async () => {
-  if (!data.value?.mid) return
+  if (!user.userId) return
   const res = await client.GET('/bili/live/infoByUid', {
     params: {
       query: {
-        userId: data.value.mid,
+        userId: user.userId,
       },
     },
   })
@@ -125,34 +147,12 @@ const updateRoomInfo = async () => {
   if (res.data.area_id) liveRoom.areaId = res.data.area_id
 }
 
-const options = ref<CascaderOption[]>([])
-const updateAreas = async () => {
-  const res = await client.GET('/bili/live/areas')
-  if (!res.data?.length) return
-  options.value = res.data.map(
-    i =>
-      ({
-        label: i.name,
-        value: Number(i.id),
-        children: i.list.map(
-          i =>
-            ({
-              label: i.name,
-              value: Number(i.id),
-            }) as CascaderOption,
-        ),
-      }) as CascaderOption,
-  )
-}
-
 const init = async () => {
   obs.connect()
   loading.value = true
   try {
-    const res = await client.GET('/bili/current')
-    data.value = res.data
-    if (!data.value?.isLogin) return
-    await updateAreas()
+    await user.updateUserInfo()
+    await user.updateAreas()
     await updateRoomInfoByUserId()
     await updateRoomInfo()
   } finally {
