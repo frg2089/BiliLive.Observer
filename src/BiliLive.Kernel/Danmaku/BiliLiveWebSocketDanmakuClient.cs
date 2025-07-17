@@ -28,7 +28,7 @@ public sealed class BiliLiveWebSocketDanmakuClient(
             },
         };
 
-        await _client.ConnectAsync(server.WSUri, apiClient.Client, cancellationToken);
+        await _client.ConnectAsync(server.WSSUri, apiClient.Client, cancellationToken);
         var receiving = ReceivingAsync(cancellationToken);
         var task = await base.EnterRoomAsync(roomId, mid, token, cancellationToken);
 
@@ -112,6 +112,11 @@ public sealed class BiliLiveWebSocketDanmakuClient(
             {
                 logger.LogCritical(e, "Critical");
                 throw;
+            }
+            catch (OperationCanceledException e)
+            {
+                logger.LogInformation(e, "已退出");
+                break;
             }
             catch (Exception e)
             {

@@ -16,7 +16,7 @@ public abstract class BiliLiveDanmakuClient(ILogger<BiliLiveDanmakuClient> logge
 
     public virtual Task<Task> EnterRoomAsync(int roomId, long mid = 0, string? token = null, CancellationToken cancellationToken = default)
     {
-        _enterRoomStatus?.SetCanceled();
+        _enterRoomStatus?.SetCanceled(CancellationToken.None);
         _enterRoomStatus = new();
         return Task.FromResult(_enterRoomStatus.Task);
     }

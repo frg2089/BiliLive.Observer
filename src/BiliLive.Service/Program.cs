@@ -154,16 +154,16 @@ chat.MapGet("/event", async (
     context.Response.ContentType = MediaTypeNames.Text.EventStream;
     danmaku.ReceivedHot += async (_, e) =>
     {
-        await context.Response.WriteAsync("event: hot", cancellationToken);
-        await context.Response.WriteAsync($"data: {e.Hot}", cancellationToken);
-        await context.Response.WriteAsync($"\n\n");
+        await context.Response.WriteAsync("event: hot\r\n", cancellationToken);
+        await context.Response.WriteAsync($"data: {e.Hot}\r\n", cancellationToken);
+        await context.Response.WriteAsync($"\r\n");
         await context.Response.Body.FlushAsync();
     };
     danmaku.ReceivedNotification += async (_, e) =>
     {
-        await context.Response.WriteAsync("event: notification", cancellationToken);
-        await context.Response.WriteAsync($"data: {e.Data}", cancellationToken);
-        await context.Response.WriteAsync($"\n\n");
+        await context.Response.WriteAsync("event: notification\r\n", cancellationToken);
+        await context.Response.WriteAsync($"data: {e.Data}\r\n", cancellationToken);
+        await context.Response.WriteAsync($"\r\n");
         await context.Response.Body.FlushAsync();
     };
 
