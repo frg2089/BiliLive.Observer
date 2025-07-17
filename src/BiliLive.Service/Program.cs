@@ -1,11 +1,11 @@
-using System.Net;
+ï»¿using System.Net;
 using System.Net.Mime;
-using System.Net.NetworkInformation;
 
 using BiliLive.Kernel;
 using BiliLive.Kernel.Danmaku;
 using BiliLive.Kernel.Models;
 using BiliLive.Service.Model;
+using BiliLive.Service.Services;
 
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,7 +15,7 @@ CookieContainer cookie = new();
 {
     var path = builder.Configuration.GetValue<string>("Cookie");
     if (string.IsNullOrWhiteSpace(path))
-        throw new InvalidDataException("cookie ÎÄ¼þÂ·¾¶Î´ÉèÖÃ");
+        throw new InvalidDataException("cookie æ–‡ä»¶è·¯å¾„æœªè®¾ç½®");
 
     if (File.Exists(path))
     {
@@ -39,6 +39,8 @@ builder.Services.AddHttpClient<BiliApiClient, BiliApiClient>((client, provider) 
         };
         return handler;
     });
+builder.Services.AddSingleton<DanmakuService>();
+builder.Services.AddHostedService(provider => provider.GetRequiredService<DanmakuService>());
 builder.Services.AddTransient<BiliLiveDanmakuClientProvider>();
 builder.Services.AddTransient<BiliLoginClient>();
 builder.Services.AddTransient<BiliLiveClient>();
@@ -65,6 +67,22 @@ var bili = app.MapGroup("/bili");
 bili.MapGet("/current", async ([FromServices] BiliApiClient client, CancellationToken cancellationToken) =>
     TypedResults.Ok(await client.GetPersonDataAsync(cancellationToken)));
 
+bili.MapPost("/regenv", async ([FromServices] BiliApiClient client, [FromServices] IConfiguration configuration, CancellationToken cancellationToken) =>
+{
+
+    await client.RefreshBuvidAsync(cancellationToken);
+    await client.GenWebTicketAsync(cancellationToken);
+
+    var path = configuration.GetValue<string>("ExClimbWuzhi");
+    if (string.IsNullOrWhiteSpace(path))
+        throw new InvalidDataException("ExClimbWuzhi æ–‡ä»¶è·¯å¾„æœªè®¾ç½®");
+    var payload = await File.ReadAllTextAsync(path, cancellationToken);
+
+    payload = payload.Replace("${buvid3}", client.GetBuvid3());
+
+    TypedResults.Ok(await client.ExClimbWuzhiAsync(payload, cancellationToken));
+});
+
 bili.MapGet("/get", async ([FromQuery] string url, [FromServices] HttpClient http, CancellationToken cancellationToken) =>
 {
     var res = await http.GetAsync(url, cancellationToken);
@@ -83,7 +101,7 @@ bili.MapGet("/login/poll", async ([FromQuery] string qrcodeKey, [FromServices] B
     {
         var path = configuration.GetValue<string>("Cookie");
         if (string.IsNullOrWhiteSpace(path))
-            throw new InvalidDataException("cookie ÎÄ¼þÂ·¾¶Î´ÉèÖÃ");
+            throw new InvalidDataException("cookie æ–‡ä»¶è·¯å¾„æœªè®¾ç½®");
 
         await using var fs = File.Create(path);
         await cookie.SaveToAsync(fs, cancellationToken: cancellationToken);
@@ -127,49 +145,17 @@ chat.MapGet("/event", async (
     HttpContext context,
     [FromQuery] int roomId,
     [FromQuery] long userId,
-    [FromServices] BiliLiveClient live,
-    [FromServices] BiliLiveDanmakuClientProvider danmakuClientProvider,
+    [FromServices] DanmakuService service,
     CancellationToken cancellationToken) =>
 {
-    var serverInfo = await live.GetDanmakuInfoAsync(RoomId, cancellationToken: cancellationToken);
-
-    using Ping ping = new();
-    Dictionary<LiveDanmakuServerInfo, double> delays = new(serverInfo.HostList.Count);
-    foreach (var item in serverInfo.HostList)
-    {
-        const int loopCount = 3;
-
-        var results = await Task.WhenAll(Enumerable.Range(1, loopCount).Select(_ => ping.SendPingAsync(item.Host)));
-
-        if (results.Count(i => i.Status is IPStatus.Success) < (loopCount + 1) / 2)
-            continue;
-
-        delays[item] = results.Average(i => i.RoundtripTime);
-    }
-
-    var server = delays.MinBy(i => i.Value).Key;
-
-    var danmaku = danmakuClientProvider.Create(server);
-
     context.Response.ContentType = MediaTypeNames.Text.EventStream;
-    danmaku.ReceivedHot += async (_, e) =>
+    await service.JoinAsync(roomId, userId, async (type, data) =>
     {
-        await context.Response.WriteAsync("event: hot\r\n", cancellationToken);
-        await context.Response.WriteAsync($"data: {e.Hot}\r\n", cancellationToken);
+        await context.Response.WriteAsync($"event: {type}\r\n", cancellationToken);
+        await context.Response.WriteAsync($"data: {data}\r\n", cancellationToken);
         await context.Response.WriteAsync($"\r\n");
         await context.Response.Body.FlushAsync();
-    };
-    danmaku.ReceivedNotification += async (_, e) =>
-    {
-        await context.Response.WriteAsync("event: notification\r\n", cancellationToken);
-        await context.Response.WriteAsync($"data: {e.Data}\r\n", cancellationToken);
-        await context.Response.WriteAsync($"\r\n");
-        await context.Response.Body.FlushAsync();
-    };
-
-    var mainloop = await danmaku.EnterRoomAsync(RoomId, UserId, serverInfo.Token, cancellationToken: cancellationToken);
-    await mainloop;
-    await danmaku.LeaveRoomAsync(cancellationToken);
+    }, cancellationToken);
 }).Produces(StatusCodes.Status206PartialContent, contentType: MediaTypeNames.Text.EventStream);
 
 app.Run();

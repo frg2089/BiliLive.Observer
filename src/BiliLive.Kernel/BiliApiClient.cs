@@ -180,4 +180,18 @@ public sealed class BiliApiClient
             ["payload"] = payload,
         }, cancellationToken);
     }
+
+    public async Task<JsonElement> GenWebTicketAsync(CancellationToken cancellationToken = default)
+    {
+        var timestamp = DateTimeOffset.Now.ToUnixTimeSeconds();
+        var hexsign = HMACSHA256.HashData("XgwSnGZ1p"u8, Encoding.UTF8.GetBytes($"ts{timestamp}"));
+
+        return await PostFormAsync<JsonElement>("https://api.bilibili.com/bapis/bilibili.api.ticket.v1.Ticket/GenWebTicket", new Dictionary<string, string>()
+        {
+            ["key_id"] = "ec02",
+            ["hexsign"] = Convert.ToHexString(hexsign),
+            ["context[ts]"] = timestamp.ToString(),
+            ["csrf"] = GetCSRF(),
+        }, cancellationToken);
+    }
 }
