@@ -1,13 +1,13 @@
-﻿using System.Net.Http.Json;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 using BiliLive.Kernel.Models;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace BiliLive.Kernel;
 
-public sealed class BiliLiveClient(BiliApiClient client, ILogger<BiliLiveClient> logger)
+public sealed class BiliLiveClient(BiliApiClient client, IOptions<BiliLiveClientOptions> options, ILogger<BiliLiveClient> logger)
 {
     public async Task<LiveRoomInfoData> GetRoomInfoAsync(int roomId, CancellationToken cancellationToken = default)
         => await client.GetAsync<LiveRoomInfoData>($"https://api.live.bilibili.com/room/v1/Room/get_info?room_id={roomId}", cancellationToken);
@@ -66,6 +66,12 @@ public sealed class BiliLiveClient(BiliApiClient client, ILogger<BiliLiveClient>
         return await client.PostFormAsync<JsonElement>(url, form, cancellationToken);
     }
 
+    public async Task<HomePageLiveVersion> GetLiveClientVersion(CancellationToken cancellationToken = default)
+    {
+        const string url = "https://api.live.bilibili.com/xlive/app-blink/v1/liveVersionInfo/getHomePageLiveVersion";
+
+        return await client.GetAsync<HomePageLiveVersion>($"{url}?system_version=2", cancellationToken);
+    }
 
     public async Task<StartLiveData> StartStreamAsync(int roomId, int areaId, string platform = "pc_link", CancellationToken cancellationToken = default)
     {
@@ -80,7 +86,16 @@ public sealed class BiliLiveClient(BiliApiClient client, ILogger<BiliLiveClient>
             ["platform"] = platform,
             ["csrf"] = csrf,
             ["csrf_token"] = csrf,
+            ["ts"] = DateTimeOffset.Now.ToUnixTimeSeconds().ToString(),
         };
+
+        if (options.Value.UseLiveClientVersionHook)
+        {
+            var clientVersion = await GetLiveClientVersion(cancellationToken);
+            form["version"] = clientVersion.CurrVersion;
+            form["build"] = clientVersion.Build.ToString();
+        }
+
         try
         {
             return await client.PostFormAsync<StartLiveData>(url, form, cancellationToken);

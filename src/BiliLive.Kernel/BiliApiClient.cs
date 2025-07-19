@@ -46,6 +46,14 @@ public sealed class BiliApiClient
     internal CookieContainer CookieContainer { get; }
     internal HttpClient Client { get; }
 
+    [ThreadStatic]
+    private static string? s_traceIdentifier;
+    public static string TraceIdentifier
+    {
+        get => s_traceIdentifier ??= Guid.CreateVersion7().ToString("N");
+        set => s_traceIdentifier = value;
+    }
+
     /// <summary>
     /// 发送请求
     /// </summary>
@@ -56,9 +64,7 @@ public sealed class BiliApiClient
     /// <exception cref="BiliApiException"></exception>
     public async Task<T> SendAsync<T>(HttpRequestMessage request, CancellationToken cancellationToken = default)
     {
-        Guid requestId = Guid.CreateVersion7();
-
-        _logger.LogInformation("[{id}] 请求: {url}", requestId, request.RequestUri?.ToString().Split('?')[0]);
+        _logger.LogInformation("[{id}] 请求: {url}", TraceIdentifier, request.RequestUri?.ToString().Split('?')[0]);
         var response = await Client.SendAsync(request, cancellationToken);
 
         response.EnsureSuccessStatusCode();
@@ -75,7 +81,7 @@ public sealed class BiliApiClient
 
             {json}
             """,
-            requestId,
+            TraceIdentifier,
             json);
 
         var data = json.Deserialize<BiliApiResult<JsonElement>>() ?? throw new BiliApiException("Failed to parse response.");

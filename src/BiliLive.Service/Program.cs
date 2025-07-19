@@ -35,13 +35,14 @@ builder.Services.AddHttpClient<BiliApiClient, BiliApiClient>((client, provider) 
             AllowAutoRedirect = true,
             UseCookies = true,
             UseProxy = false,
-            CookieContainer = cookie
+            CookieContainer = cookie,
         };
         return handler;
     });
 builder.Services.AddTransient<BiliLiveDanmakuClientProvider>();
 builder.Services.AddTransient<BiliLoginClient>();
 builder.Services.AddTransient<BiliLiveClient>();
+builder.Services.AddOptions<BiliLiveClientOptions>().BindConfiguration("BiliLive");
 
 
 var app = builder.Build();
@@ -59,6 +60,11 @@ app.UseStaticFiles();
 app.UseDefaultFiles();
 app.MapFallbackToFile("/index.html");
 
+app.Use(async (context, request) =>
+{
+    BiliApiClient.TraceIdentifier = context.TraceIdentifier;
+    await request();
+});
 
 var bili = app.MapGroup("/bili");
 
