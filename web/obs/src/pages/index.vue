@@ -85,6 +85,7 @@ import { useOBS } from '../stores/obs'
 
 const inOBS = !!window?.obsstudio?.pluginVersion
 const obs = useOBS()
+const router = useRouter()
 const loading = ref(false)
 const btnLoading = ref(false)
 
@@ -166,6 +167,16 @@ const start = async () => {
     const res = await client.POST('/bili/live/start', {
       body: liveRoom,
     })
+
+    if (res.data?.qr) {
+      router.push({
+        name: '/face-auth',
+        params: {
+          qr: res.data.qr,
+        },
+      })
+      return
+    }
 
     if (!res.data?.rtmp) return
 

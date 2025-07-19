@@ -131,7 +131,7 @@ chat.MapGet("/event", async (
     [FromServices] BiliLiveDanmakuClientProvider danmakuClientProvider,
     CancellationToken cancellationToken) =>
 {
-    var serverInfo = await live.GetDanmakuInfoAsync(RoomId, cancellationToken: cancellationToken);
+    var serverInfo = await live.GetDanmakuInfoAsync(roomId, cancellationToken: cancellationToken);
 
     using Ping ping = new();
     Dictionary<LiveDanmakuServerInfo, double> delays = new(serverInfo.HostList.Count);
@@ -167,7 +167,7 @@ chat.MapGet("/event", async (
         await context.Response.Body.FlushAsync();
     };
 
-    var mainloop = await danmaku.EnterRoomAsync(RoomId, UserId, serverInfo.Token, cancellationToken: cancellationToken);
+    var mainloop = await danmaku.EnterRoomAsync(roomId, userId, serverInfo.Token, cancellationToken: cancellationToken);
     await mainloop;
     await danmaku.LeaveRoomAsync(cancellationToken);
 }).Produces(StatusCodes.Status206PartialContent, contentType: MediaTypeNames.Text.EventStream);

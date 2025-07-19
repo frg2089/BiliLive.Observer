@@ -3,9 +3,11 @@ using System.Text.Json;
 
 using BiliLive.Kernel.Models;
 
+using Microsoft.Extensions.Logging;
+
 namespace BiliLive.Kernel;
 
-public sealed class BiliLiveClient(BiliApiClient client)
+public sealed class BiliLiveClient(BiliApiClient client, ILogger<BiliLiveClient> logger)
 {
     public async Task<LiveRoomInfoData> GetRoomInfoAsync(int roomId, CancellationToken cancellationToken = default)
         => await client.GetAsync<LiveRoomInfoData>($"https://api.live.bilibili.com/room/v1/Room/get_info?room_id={roomId}", cancellationToken);
@@ -79,8 +81,16 @@ public sealed class BiliLiveClient(BiliApiClient client)
             ["csrf"] = csrf,
             ["csrf_token"] = csrf,
         };
-
-        return await client.PostFormAsync<StartLiveData>(url, form, cancellationToken);
+        try
+        {
+            return await client.PostFormAsync<StartLiveData>(url, form, cancellationToken);
+        }
+        catch (BiliApiResultException e) when (e.Code is 60024)
+        {
+            logger.LogWarning("60024 目标分区需要人脸认证，请升级最新客户端再次尝试");
+            return e.Result.Deserialize<StartLiveData>()
+                ?? throw new BiliApiException("无法反序列化为对象", e);
+        }
     }
 
     public async Task<JsonElement> StopStreamAsync(int roomId, string platform = "pc_link", CancellationToken cancellationToken = default)
