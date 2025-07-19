@@ -78,19 +78,19 @@ public sealed class BiliApiClient
             requestId,
             json);
 
-        var data = json.Deserialize<BiliApiResult<T>>() ?? throw new BiliApiException("Failed to parse response.");
+        var data = json.Deserialize<BiliApiResult<JsonElement>>() ?? throw new BiliApiException("Failed to parse response.");
 
         switch (data.Code)
         {
             case 0:
-                Debug.Assert(data.Data is not null);
-                return data.Data;
-            case -101 when data.Data is not null: // 账号未登录
-                return data.Data;
+                Debug.Assert(data.Data.ValueKind is not JsonValueKind.Undefined and not JsonValueKind.Null);
+                var result = data.Data.Deserialize<T>();
+                Debug.Assert(result is not null);
+                return result;
             case -352:
-                throw new BiliApiException("-352 风控校验失败");
+                throw new BiliApiResultException(data.Code, json, "-352 风控校验失败");
             default:
-                throw new BiliApiException(data.Message);
+                throw new BiliApiResultException(data.Code, json, data.Message);
         }
     }
 
@@ -163,7 +163,18 @@ public sealed class BiliApiClient
     }
 
     public async Task<PersonData> GetPersonDataAsync(CancellationToken cancellationToken = default)
-        => await GetAsync<PersonData>("https://api.bilibili.com/x/web-interface/nav", cancellationToken);
+    {
+        try
+        {
+            return await GetAsync<PersonData>("https://api.bilibili.com/x/web-interface/nav", cancellationToken);
+        }
+        catch (BiliApiResultException e) when (e.Code is -101)
+        {
+            _logger.LogWarning("-101 账号未登录");
+            return e.Result.Deserialize<PersonData>()
+                ?? throw new BiliApiException("无法反序列化为对象", e);
+        }
+    }
 
     public async Task RefreshBuvidAsync(CancellationToken cancellationToken = default)
     {

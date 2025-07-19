@@ -13,7 +13,7 @@ export const useUser = defineStore('user', () => {
     data.value = res1.data
   }
 
-  const updateAreas = async ()=>{
+  const updateAreas = async () => {
     const res = await client.GET('/bili/live/areas')
     areas.value = res.data
   }
@@ -23,6 +23,6 @@ export const useUser = defineStore('user', () => {
     areas,
     userId,
     updateUserInfo,
-    updateAreas
+    updateAreas,
   }
 })

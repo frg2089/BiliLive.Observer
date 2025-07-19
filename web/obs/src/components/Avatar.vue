@@ -1,6 +1,11 @@
 <template>
   <div relative w-16 h-16 flex items-center justify-center>
-    <img block w-9 h-9 rounded-full :src="path(`/bili/get?url=${encodeURIComponent(face)}`)" />
+    <img
+      block
+      w-9
+      h-9
+      rounded-full
+      :src="path(`/bili/get?url=${encodeURIComponent(face)}`)" />
     <img
       v-if="frame"
       absolute
@@ -15,7 +20,7 @@
 </template>
 
 <script lang="ts" setup>
-import { pathChecker } from '../api';
+import { pathChecker } from '../api'
 
 defineProps<{
   face: string
@@ -23,5 +28,4 @@ defineProps<{
 }>()
 
 const path = pathChecker
-
 </script>

@@ -82,7 +82,6 @@
 <script lang="ts" setup>
 import type { CascaderOption } from 'naive-ui'
 
-import type { components } from '../../obj/apis'
 import { client } from '../api'
 import { useOBS } from '../stores/obs'
 import { useUser } from '../stores/user'
@@ -90,6 +89,7 @@ import { useUser } from '../stores/user'
 const inOBS = !!window?.obsstudio?.pluginVersion
 const obs = useOBS()
 const user = useUser()
+const router = useRouter()
 const loading = ref(false)
 const btnLoading = ref(false)
 
@@ -166,6 +166,16 @@ const start = async () => {
     const res = await client.POST('/bili/live/start', {
       body: liveRoom,
     })
+
+    if (res.data?.qr) {
+      router.push({
+        name: '/face-auth',
+        params: {
+          qr: res.data.qr,
+        },
+      })
+      return
+    }
 
     if (!res.data?.rtmp) return
 

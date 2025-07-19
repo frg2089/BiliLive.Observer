@@ -31,7 +31,7 @@ public sealed class DanmakuService(IServiceProvider serviceProvider, ILogger<Dan
 
     public async Task JoinAsync(int roomId, long userId, Action<string, string> reporter, CancellationToken cancellationToken)
     {
-        cancellationToken.Register(async () =>
+        cancellationToken.Register(() =>
         {
             if (!_clients.TryGetValue(roomId, out var c))
                 return;

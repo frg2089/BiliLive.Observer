@@ -206,10 +206,10 @@ onMounted(init)
     border-radius: 100%;
   }
 
-  .username{
+  .username {
     color: green;
 
-    &::after{
+    &::after {
       content: ': ';
     }
   }
