@@ -4,9 +4,6 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 using BiliLive.Kernel.Models;
 
@@ -126,46 +123,66 @@ public sealed class BiliApiClient
         return await SendAsync<T>(request, cancellationToken);
     }
 
-
     private static readonly int[] MixinKeyEncTab =
-    {
+    [
         46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35, 27, 43, 5, 49, 33, 9, 42, 19, 29, 28, 14, 39,
         12, 38, 41, 13, 37, 48, 7, 16, 24, 55, 40, 61, 26, 17, 0, 1, 60, 51, 30, 4, 22, 25, 54, 21, 56, 59, 6, 63,
         57, 62, 11, 36, 20, 34, 44, 52
-    };
+    ];
 
-    private static string GetMixinKey(string orig) => MixinKeyEncTab.Aggregate("", (s, i) => s + orig[i])[..32];
+    private static string GetMixinKey(string orig)
+    {
+        var sb = MixinKeyEncTab.Aggregate(new StringBuilder(), (s, i) => s.Append(orig[i]));
+        sb.Length = 32;
+        return sb.ToString();
+    }
 
-    public static Dictionary<string, string> EncryptWbi(Dictionary<string, string> parameters, string imgKey, string subKey)
+    public static async Task<Dictionary<string, string>> SignWithWbiAsync(Dictionary<string, string> parameters, string imgKey, string subKey, CancellationToken cancellationToken = default)
     {
         string mixinKey = GetMixinKey(imgKey + subKey);
         string currTime = DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
-        //添加 wts 字段
+        // 添加 wts 字段
         parameters["wts"] = currTime;
         // 按照 key 重排参数
         parameters = parameters.OrderBy(p => p.Key).ToDictionary(p => p.Key, p => p.Value);
-        //过滤 value 中的 "!'()*" 字符
+        // 过滤 value 中的 "!'()*" 字符
         parameters = parameters.ToDictionary(
             kvp => kvp.Key,
-            kvp => new string(kvp.Value.Where(chr => !"!'()*".Contains(chr)).ToArray())
+            kvp => new string([.. kvp.Value.Where(chr => !"!'()*".Contains(chr))])
         );
         // 序列化参数
-        string query = new FormUrlEncodedContent(parameters).ReadAsStringAsync().Result;
-        //计算 w_rid
-        using MD5 md5 = MD5.Create();
-        byte[] hashBytes = md5.ComputeHash(Encoding.UTF8.GetBytes(query + mixinKey));
-        string wbiSign = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+        string query = await new FormUrlEncodedContent(parameters).ReadAsStringAsync(cancellationToken);
+        // 计算 w_rid
+        byte[] hashBytes = MD5.HashData(Encoding.UTF8.GetBytes(query + mixinKey));
+        string wbiSign = Convert.ToHexStringLower(hashBytes);
         parameters["w_rid"] = wbiSign;
 
         return parameters;
     }
 
-    public async Task<Dictionary<string, string>> EncryptWbiAsync(Dictionary<string, string> parameters, CancellationToken cancellationToken = default)
+    public async Task<Dictionary<string, string>> SignWithWbiAsync(Dictionary<string, string> parameters, CancellationToken cancellationToken = default)
     {
         var person = await GetPersonDataAsync(cancellationToken);
 
         var (img, sub) = (Path.GetFileNameWithoutExtension(person.WbiImg.ImgUrl), Path.GetFileNameWithoutExtension(person.WbiImg.SubUrl));
-        return EncryptWbi(parameters, img, sub);
+        return await SignWithWbiAsync(parameters, img, sub, cancellationToken);
+    }
+
+    public static async Task<Dictionary<string, string>> SignWithAppKeyAsync(Dictionary<string, string> parameters, string appKey, string appSecret, CancellationToken cancellationToken = default)
+    {
+        // 首先为参数中添加 appkey 字段
+        parameters["appkey"] = appKey;
+        // 然后按照参数的 Key 重新排序
+        parameters = parameters.OrderBy(p => p.Key).ToDictionary(p => p.Key, p => p.Value);
+        // 再对这个 Key-Value 进行 url query 序列化
+        var query = await new FormUrlEncodedContent(parameters).ReadAsStringAsync(cancellationToken);
+        // 并拼接与之对应的 appSecret
+        query += appSecret;
+        // 进行 md5 Hash 运算（32-bit 字符小写）
+        var sign = Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(query)));
+        // 最后在参数尾部增添 sign字段，它的 Value 为上一步计算所得的 hash，一并作为表单或 Query 提交
+        parameters["sign"] = sign;
+        return parameters;
     }
 
     public async Task<PersonData> GetPersonDataAsync(CancellationToken cancellationToken = default)

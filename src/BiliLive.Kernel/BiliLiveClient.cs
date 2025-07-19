@@ -22,7 +22,14 @@ public sealed class BiliLiveClient(BiliApiClient client, IOptions<BiliLiveClient
         => await client.GetAsync<JsonElement>($"https://api.live.bilibili.com/live_user/v1/Master/info?uid={mid}", cancellationToken);
 
     public async Task<JsonElement> GetStreamerInfoAsync(string req_biz, IEnumerable<int> roomIds, CancellationToken cancellationToken = default)
-        => await client.GetAsync<JsonElement>($"https://api.live.bilibili.com/xlive/web-room/v1/index/getRoomBaseInfo?req_biz={req_biz}&{string.Join('&', roomIds.Select(i => $"room_ids={i}"))}", cancellationToken);
+    {
+        var query = await new FormUrlEncodedContent([
+            KeyValuePair.Create("req_biz", req_biz),
+            ..roomIds.Select(i=>KeyValuePair.Create("room_ids", i.ToString()))
+            ]).ReadAsStringAsync(cancellationToken);
+        return await client.GetAsync<JsonElement>($"https://api.live.bilibili.com/xlive/web-room/v1/index/getRoomBaseInfo?{query}", cancellationToken);
+    }
+
     public async Task<JsonElement> GetStreamerInfoAsync(string req_biz, int roomId, CancellationToken cancellationToken = default)
         => await GetStreamerInfoAsync(req_biz, [roomId], cancellationToken);
 
@@ -89,12 +96,24 @@ public sealed class BiliLiveClient(BiliApiClient client, IOptions<BiliLiveClient
             ["ts"] = DateTimeOffset.Now.ToUnixTimeSeconds().ToString(),
         };
 
-        if (options.Value.UseLiveClientVersionHook)
+        if (options.Value.FetchLastedVersion)
         {
             var clientVersion = await GetLiveClientVersion(cancellationToken);
             form["version"] = clientVersion.CurrVersion;
             form["build"] = clientVersion.Build.ToString();
         }
+        else if (options.Value is { Version: { } version, Build: { } build }
+            && !string.IsNullOrWhiteSpace(version)
+            && !string.IsNullOrWhiteSpace(build))
+        {
+            form["version"] = version;
+            form["build"] = build;
+        }
+
+        if (options.Value is { AppKey: { } appKey, AppSecret: { } appSecret }
+            && !string.IsNullOrWhiteSpace(appKey)
+            && !string.IsNullOrWhiteSpace(appSecret))
+            form = await BiliApiClient.SignWithAppKeyAsync(form, appKey, appSecret, cancellationToken);
 
         try
         {
@@ -131,10 +150,10 @@ public sealed class BiliLiveClient(BiliApiClient client, IOptions<BiliLiveClient
 
         var csrf = client.GetCSRF();
 
-        var query = await client.EncryptWbiAsync(new()
+        var query = await new FormUrlEncodedContent(await client.SignWithWbiAsync(new()
         {
             ["web_location"] = "444.8",
-        }, cancellationToken);
+        }, cancellationToken)).ReadAsStringAsync(cancellationToken);
 
         Dictionary<string, string> form = new()
         {
@@ -147,7 +166,7 @@ public sealed class BiliLiveClient(BiliApiClient client, IOptions<BiliLiveClient
             ["color"] = 0xFFFFFF.ToString(),
         };
 
-        return await client.PostFormAsync<JsonElement>($"{url}?{string.Join('&', query.Select(i => $"{i.Key}={i.Value}"))}", form, cancellationToken);
+        return await client.PostFormAsync<JsonElement>($"{url}?{query}", form, cancellationToken);
     }
 
     public async Task<LiveDanmakuServerData> GetDanmakuInfoAsync(int roomId, CancellationToken cancellationToken = default)
@@ -156,14 +175,13 @@ public sealed class BiliLiveClient(BiliApiClient client, IOptions<BiliLiveClient
 
         var csrf = client.GetCSRF();
 
-        var query = await client.EncryptWbiAsync(new()
+        var query = await new FormUrlEncodedContent(await client.SignWithWbiAsync(new()
         {
             ["id"] = roomId.ToString(),
             ["type"] = "0",
             ["web_location"] = "444.8",
-        }, cancellationToken);
+        }, cancellationToken)).ReadAsStringAsync(cancellationToken);
 
-
-        return await client.GetAsync<LiveDanmakuServerData>($"{url}?{string.Join('&', query.Select(i => $"{i.Key}={i.Value}"))}", cancellationToken);
+        return await client.GetAsync<LiveDanmakuServerData>($"{url}?{query}", cancellationToken);
     }
 }
