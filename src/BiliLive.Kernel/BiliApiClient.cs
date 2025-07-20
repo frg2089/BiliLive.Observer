@@ -83,18 +83,13 @@ public sealed class BiliApiClient
 
         var data = json.Deserialize<BiliApiResult<JsonElement>>() ?? throw new BiliApiException("Failed to parse response.");
 
-        switch (data.Code)
-        {
-            case 0:
-                Debug.Assert(data.Data.ValueKind is not JsonValueKind.Undefined and not JsonValueKind.Null);
-                var result = data.Data.Deserialize<T>();
-                Debug.Assert(result is not null);
-                return result;
-            case -352:
-                throw new BiliApiResultException(data.Code, json, "-352 风控校验失败");
-            default:
-                throw new BiliApiResultException(data.Code, json, data.Message);
-        }
+        if (data.Code is not 0)
+            throw new BiliApiResultException(data.Code, json, data.Message);
+        
+        Debug.Assert(data.Data.ValueKind is not JsonValueKind.Undefined and not JsonValueKind.Null);
+        var result = data.Data.Deserialize<T>();
+        Debug.Assert(result is not null);
+        return result;
     }
 
     public async Task<T> GetAsync<T>(string url, CancellationToken cancellationToken = default)
@@ -194,7 +189,7 @@ public sealed class BiliApiClient
         catch (BiliApiResultException e) when (e.Code is -101)
         {
             _logger.LogWarning("-101 账号未登录");
-            return e.Result.Deserialize<PersonData>()
+            return e.DataResult.Deserialize<PersonData>()
                 ?? throw new BiliApiException("无法反序列化为对象", e);
         }
     }

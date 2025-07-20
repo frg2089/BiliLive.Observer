@@ -115,16 +115,7 @@ public sealed class BiliLiveClient(BiliApiClient client, IOptions<BiliLiveClient
             && !string.IsNullOrWhiteSpace(appSecret))
             form = await BiliApiClient.SignWithAppKeyAsync(form, appKey, appSecret, cancellationToken);
 
-        try
-        {
-            return await client.PostFormAsync<StartLiveData>(url, form, cancellationToken);
-        }
-        catch (BiliApiResultException e) when (e.Code is 60024)
-        {
-            logger.LogWarning("60024 目标分区需要人脸认证，请升级最新客户端再次尝试");
-            return e.Result.Deserialize<StartLiveData>()
-                ?? throw new BiliApiException("无法反序列化为对象", e);
-        }
+        return await client.PostFormAsync<StartLiveData>(url, form, cancellationToken);
     }
 
     public async Task<JsonElement> StopStreamAsync(int roomId, string platform = "pc_link", CancellationToken cancellationToken = default)

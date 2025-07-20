@@ -1,12 +1,14 @@
 using System.Net;
 using System.Net.Mime;
 using System.Net.NetworkInformation;
+using System.Text.Json;
 
 using BiliLive.Kernel;
 using BiliLive.Kernel.Danmaku;
 using BiliLive.Kernel.Models;
 using BiliLive.Service.Model;
 
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -108,8 +110,31 @@ live.MapGet("/infoByUid", async ([FromQuery] long userId, [FromServices] BiliLiv
 live.MapGet("/areas", async ([FromServices] BiliLiveClient live, CancellationToken cancellationToken)
     => TypedResults.Ok(await live.GetAreaListAsync(cancellationToken)));
 
-live.MapPost("/start", async ([FromBody] StartLiveRequest request, [FromServices] BiliLiveClient live, CancellationToken cancellationToken)
-    => TypedResults.Ok(await live.StartStreamAsync(request.RoomId, request.AreaId, cancellationToken: cancellationToken)));
+live.MapPost(
+    "/start",
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, MediaTypeNames.Application.ProblemJson, MediaTypeNames.Application.Json)]
+    async Task<Results<Ok<StartLiveData>, ProblemHttpResult>> ([FromBody] StartLiveRequest request, [FromServices] BiliLiveClient live, CancellationToken cancellationToken) =>
+    {
+        try
+        {
+            return TypedResults.Ok(await live.StartStreamAsync(request.RoomId, request.AreaId, cancellationToken: cancellationToken));
+        }
+        catch (BiliApiResultException e) when (e.Code is 60024)
+        {
+            var result = e.DataResult.Deserialize<StartLiveData>()
+                ?? throw new BiliApiException("无法反序列化为对象", e);
+
+            return TypedResults.Problem(
+                title: e.Code.ToString(),
+                detail: e.RawMessage,
+                statusCode: StatusCodes.Status403Forbidden,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["qr"] = result.Qr,
+                    ["data"] = result,
+                });
+        }
+    });
 
 live.MapPost("/stop", async ([FromBody] StartLiveRequest request, [FromServices] BiliLiveClient live, CancellationToken cancellationToken)
     => TypedResults.Ok(await live.StopStreamAsync(request.RoomId, cancellationToken: cancellationToken)));

@@ -168,14 +168,16 @@ const start = async () => {
       body: liveRoom,
     })
 
-    if (res.data?.qr) {
-      router.push({
-        name: '/face-auth',
-        params: {
-          qr: res.data.qr,
-        },
-      })
-      return
+    if (res.error?.title === '60024') {
+      if ('qr' in res.error) {
+        router.push({
+          name: '/face-auth',
+          query: {
+            qr: res.error.qr as string,
+          },
+        })
+        return
+      }
     }
 
     if (!res.data?.rtmp) return

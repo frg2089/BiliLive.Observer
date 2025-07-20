@@ -6,24 +6,31 @@ namespace BiliLive.Kernel;
 public class BiliApiResultException : BiliApiException
 {
     public int Code { get; }
+    public string RawMessage { get; }
+    public JsonElement RawResult { get; }
+    public JsonElement DataResult { get; }
 
-    public JsonElement Result { get; }
-
-    public BiliApiResultException(int code, JsonElement result)
+    public BiliApiResultException(int code, string message, JsonElement raw)
         : base($"[{code}]")
     {
         Code = code;
-        Result = result;
+        RawMessage = message;
+        RawResult = raw;
+        DataResult = raw.GetProperty("data");
     }
 
-    public BiliApiResultException(int code, JsonElement result, string message) : base($"[{code}] {message}")
+    public BiliApiResultException(int code, JsonElement raw, string message) : base($"[{code}] {message}")
     {
         Code = code;
-        Result = result;
+        RawMessage = message;
+        RawResult = raw;
+        DataResult = raw.GetProperty("data");
     }
-    public BiliApiResultException(int code, JsonElement result, string message, Exception inner) : base($"[{code}] {message}", inner)
+    public BiliApiResultException(int code, JsonElement raw, string message, Exception inner) : base($"[{code}] {message}", inner)
     {
         Code = code;
-        Result = result;
+        RawMessage = message;
+        RawResult = raw;
+        DataResult = raw.GetProperty("data");
     }
 }
