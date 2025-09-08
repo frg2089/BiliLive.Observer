@@ -152,7 +152,10 @@ const init = async () => {
   try {
     const res = await client.GET('/bili/current')
     data.value = res.data
-    if (!data.value?.isLogin) return
+    if (!data.value?.isLogin) {
+      router.push('/login')
+      return
+    }
     await updateAreas()
     await updateRoomInfoByUserId()
     await updateRoomInfo()
