@@ -17,14 +17,20 @@
       </h2>
       <div flex flex-col justify-center gap-2 my-2>
         <NButton
+          v-if="living"
+          :loading="btnLoading"
+          type="error"
+          size="tiny"
+          @click="stop">
+          结束直播
+        </NButton>
+        <NButton
+          v-else
           :loading="btnLoading"
           type="primary"
           size="tiny"
           @click="start">
           开始直播
-        </NButton>
-        <NButton :loading="btnLoading" size="tiny" @click="stop">
-          停止直播
         </NButton>
       </div>
 
@@ -91,6 +97,7 @@ const obs = useOBS()
 const router = useRouter()
 const loading = ref(false)
 const btnLoading = ref(false)
+const living = ref(false)
 
 const data = ref<components['schemas']['PersonData']>()
 const cover = ref<string>()
@@ -126,6 +133,7 @@ const updateRoomInfo = async () => {
   if (!res.data) return
 
   liveRoom.title = res.data.title
+  living.value = res.data.live_status === 1
   if (res.data.room_id) liveRoom.roomId = res.data.room_id
   if (res.data.area_id) liveRoom.areaId = res.data.area_id
   if (res.data.user_cover) cover.value = res.data.user_cover
@@ -190,6 +198,7 @@ const start = async () => {
 
     if (!res.data?.rtmp) return
 
+    living.value = true
     await obs.startStream(res.data.rtmp)
   } finally {
     btnLoading.value = false
@@ -218,6 +227,7 @@ const stop = async () => {
       body: liveRoom,
     })
 
+    living.value = false
     await obs.stopStream()
   } finally {
     btnLoading.value = false
