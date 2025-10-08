@@ -5,6 +5,7 @@
       accept="image/*"
       name="file"
       directory-dnd
+      :show-file-list="false"
       :action="path('/bili/live/cover')"
       :max="1"
       @finish="finish"
