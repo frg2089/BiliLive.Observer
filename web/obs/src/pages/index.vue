@@ -31,6 +31,9 @@
       <NCollapse>
         <NCollapseItem title="直播间设置" name="1">
           <NForm :model="liveRoom" size="small" mx-auto px-4>
+            <NFormItem v-if="cover" label="直播间封面">
+              <Cover :cover />
+            </NFormItem>
             <NFormItem
               label="直播间名称"
               path="title"
@@ -90,6 +93,7 @@ const loading = ref(false)
 const btnLoading = ref(false)
 
 const data = ref<components['schemas']['PersonData']>()
+const cover = ref<string>()
 const liveRoom = reactive({
   roomId: 0,
   areaId: 0,
@@ -124,6 +128,7 @@ const updateRoomInfo = async () => {
   liveRoom.title = res.data.title
   if (res.data.room_id) liveRoom.roomId = res.data.room_id
   if (res.data.area_id) liveRoom.areaId = res.data.area_id
+  if (res.data.user_cover) cover.value = res.data.user_cover
 }
 
 const options = ref<CascaderOption[]>([])

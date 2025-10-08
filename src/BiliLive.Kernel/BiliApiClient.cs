@@ -47,7 +47,7 @@ public sealed class BiliApiClient
     private static string? s_traceIdentifier;
     public static string TraceIdentifier
     {
-        get => s_traceIdentifier ??= Guid.CreateVersion7().ToString("N");
+        get => s_traceIdentifier ??= Guid.CreateVersion7().ToString();
         set => s_traceIdentifier = value;
     }
 
@@ -61,7 +61,8 @@ public sealed class BiliApiClient
     /// <exception cref="BiliApiException"></exception>
     public async Task<T> SendAsync<T>(HttpRequestMessage request, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("[{id}] 请求: {url}", TraceIdentifier, request.RequestUri?.ToString().Split('?')[0]);
+        var id = TraceIdentifier;
+        _logger.LogInformation("[{id}] 请求: {url}", id, request.RequestUri?.ToString().Split('?')[0]);
         var response = await Client.SendAsync(request, cancellationToken);
 
         response.EnsureSuccessStatusCode();
@@ -78,44 +79,56 @@ public sealed class BiliApiClient
 
             {json}
             """,
-            TraceIdentifier,
+            id,
             json);
 
         var data = json.Deserialize<BiliApiResult<JsonElement>>() ?? throw new BiliApiException("Failed to parse response.");
 
         if (data.Code is not 0)
             throw new BiliApiResultException(data.Code, json, data.Message);
-        
+
         Debug.Assert(data.Data.ValueKind is not JsonValueKind.Undefined and not JsonValueKind.Null);
         var result = data.Data.Deserialize<T>();
         Debug.Assert(result is not null);
         return result;
     }
 
-    public async Task<T> GetAsync<T>(string url, CancellationToken cancellationToken = default)
+    public async Task<TResponse> SendAsync<TResponse>(HttpMethod method, string url, HttpContent? content = default, CancellationToken cancellationToken = default)
     {
-        HttpRequestMessage request = new(HttpMethod.Get, url);
-        return await SendAsync<T>(request, cancellationToken);
+        return await SendAsync<TResponse>(new(method, url)
+        {
+            Content = content,
+        }, cancellationToken);
     }
+
+    public async Task<T> GetAsync<T>(string url, CancellationToken cancellationToken = default)
+        => await SendAsync<T>(HttpMethod.Get, url, null, cancellationToken);
 
     public async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest requestBody, CancellationToken cancellationToken = default)
+        => await SendAsync<TResponse>(HttpMethod.Post, url, JsonContent.Create(requestBody), cancellationToken);
+
+    public async Task<T> PostFormAsync<T>(string url, IEnumerable<KeyValuePair<string, object?>> formData, CancellationToken cancellationToken = default)
     {
-        HttpRequestMessage request = new(HttpMethod.Post, url)
+        var data = formData.Where(i => i.Value is not null).Cast<KeyValuePair<string, object>>();
+        HttpContent content;
+        if (formData.Any(i => i.Value is FileContent))
         {
-            Content = JsonContent.Create(requestBody)
-        };
-
-        return await SendAsync<TResponse>(request, cancellationToken);
-    }
-
-    public async Task<T> PostFormAsync<T>(string url, IEnumerable<KeyValuePair<string, string>> formData, CancellationToken cancellationToken = default)
-    {
-        HttpRequestMessage request = new(HttpMethod.Post, url)
+            MultipartFormDataContent form = new($"------Bilibili-Live-{Guid.NewGuid()}");
+            content = form;
+            foreach (var item in data)
+            {
+                if (item.Value is FileContent file)
+                    form.Add(file.GetContent(), item.Key, file.FileName);
+                else
+                    form.Add(new StringContent(item.Value.ToString() ?? string.Empty, Encoding.UTF8), item.Key);
+            }
+        }
+        else
         {
-            Content = new FormUrlEncodedContent(formData)
-        };
+            content = new FormUrlEncodedContent(data.Select(i => KeyValuePair.Create(i.Key, i.Value.ToString())));
+        }
 
-        return await SendAsync<T>(request, cancellationToken);
+        return await SendAsync<T>(HttpMethod.Post, url, content, cancellationToken);
     }
 
     private static readonly int[] MixinKeyEncTab =
@@ -163,14 +176,17 @@ public sealed class BiliApiClient
         return await SignWithWbiAsync(parameters, img, sub, cancellationToken);
     }
 
-    public static async Task<Dictionary<string, string>> SignWithAppKeyAsync(Dictionary<string, string> parameters, string appKey, string appSecret, CancellationToken cancellationToken = default)
+    public static async Task<Dictionary<string, object?>> SignWithAppKeyAsync(Dictionary<string, object?> parameters, string appKey, string appSecret, CancellationToken cancellationToken = default)
     {
         // 首先为参数中添加 appkey 字段
         parameters["appkey"] = appKey;
         // 然后按照参数的 Key 重新排序
         parameters = parameters.OrderBy(p => p.Key).ToDictionary(p => p.Key, p => p.Value);
         // 再对这个 Key-Value 进行 url query 序列化
-        var query = await new FormUrlEncodedContent(parameters).ReadAsStringAsync(cancellationToken);
+        var query = await new FormUrlEncodedContent(parameters
+            .Where(i => i.Value is not null)
+            .Select(i => KeyValuePair.Create(i.Key, i.Value?.ToString())))
+            .ReadAsStringAsync(cancellationToken);
         // 并拼接与之对应的 appSecret
         query += appSecret;
         // 进行 md5 Hash 运算（32-bit 字符小写）
@@ -194,6 +210,18 @@ public sealed class BiliApiClient
         }
     }
 
+    public async Task<ImageUploadedData> UploadImage(string bucket, string dir, FileContent file, CancellationToken cancellationToken = default)
+    {
+        Dictionary<string, object?> form = new()
+        {
+            ["bucket"] = bucket,
+            ["dir"] = dir,
+            ["file"] = file,
+        };
+
+        return await PostFormAsync<ImageUploadedData>($"https://api.bilibili.com/x/upload/web/image?csrf={GetCSRF()}", form, cancellationToken);
+    }
+
     public async Task RefreshBuvidAsync(CancellationToken cancellationToken = default)
     {
         var url = "https://api.bilibili.com/x/frontend/finger/spi";
@@ -204,7 +232,7 @@ public sealed class BiliApiClient
 
     public async Task<JsonElement> ExClimbWuzhiAsync(string payload, CancellationToken cancellationToken = default)
     {
-        return await PostFormAsync<JsonElement>("https://api.bilibili.com/x/internal/gaia-gateway/ExClimbWuzhi", new Dictionary<string, string>()
+        return await PostFormAsync<JsonElement>("https://api.bilibili.com/x/internal/gaia-gateway/ExClimbWuzhi", new Dictionary<string, object?>()
         {
             ["payload"] = payload,
         }, cancellationToken);

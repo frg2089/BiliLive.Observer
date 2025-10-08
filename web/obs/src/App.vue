@@ -1,6 +1,8 @@
 <template>
   <NConfigProvider :theme>
-    <RouterView />
+    <NMessageProvider>
+      <RouterView />
+    </NMessageProvider>
   </NConfigProvider>
 </template>
 

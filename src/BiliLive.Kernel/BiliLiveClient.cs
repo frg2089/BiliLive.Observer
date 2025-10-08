@@ -50,9 +50,9 @@ public sealed class BiliLiveClient(BiliApiClient client, IOptions<BiliLiveClient
 
         var csrf = client.GetCSRF();
 
-        Dictionary<string, string> form = new()
+        Dictionary<string, object?> form = new()
         {
-            ["room_id"] = roomId.ToString(),
+            ["room_id"] = roomId,
             ["csrf"] = csrf,
             ["csrf_token"] = csrf,
         };
@@ -73,6 +73,44 @@ public sealed class BiliLiveClient(BiliApiClient client, IOptions<BiliLiveClient
         return await client.PostFormAsync<JsonElement>(url, form, cancellationToken);
     }
 
+    public async Task<JsonElement> UpdatePreLiveInfo(
+        string platform,
+        string mobiApp,
+        int build,
+        Uri? cover = default,
+        string? title = default,
+        string? coverVertical = default,
+        int? liveDirectionType = 1,
+        string? visitId = default,
+        CancellationToken cancellationToken = default)
+    {
+        const string url = "https://api.live.bilibili.com/xlive/app-blink/v1/preLive/UpdatePreLiveInfo";
+
+        var csrf = client.GetCSRF();
+
+        Dictionary<string, object?> form = new()
+        {
+            ["csrf"] = csrf,
+            ["csrf_token"] = csrf,
+            ["platform"] = platform,
+            ["mobi_app"] = mobiApp,
+            ["build"] = build,
+        };
+
+        if (cover is not null)
+            form["cover"] = cover;
+        if (!string.IsNullOrEmpty(title))
+            form["title"] = title;
+        if (!string.IsNullOrEmpty(coverVertical))
+            form["coverVertical"] = coverVertical;
+        if (liveDirectionType.HasValue)
+            form["liveDirectionType"] = liveDirectionType.Value;
+        if (!string.IsNullOrEmpty(visitId))
+            form["visit_id"] = visitId;
+
+        return await client.PostFormAsync<JsonElement>(url, form, cancellationToken);
+    }
+
     public async Task<HomePageLiveVersion> GetLiveClientVersion(CancellationToken cancellationToken = default)
     {
         const string url = "https://api.live.bilibili.com/xlive/app-blink/v1/liveVersionInfo/getHomePageLiveVersion";
@@ -86,14 +124,14 @@ public sealed class BiliLiveClient(BiliApiClient client, IOptions<BiliLiveClient
 
         var csrf = client.GetCSRF();
 
-        Dictionary<string, string> form = new()
+        Dictionary<string, object?> form = new()
         {
-            ["room_id"] = roomId.ToString(),
-            ["area_v2"] = areaId.ToString(),
+            ["room_id"] = roomId,
+            ["area_v2"] = areaId,
             ["platform"] = platform,
             ["csrf"] = csrf,
             ["csrf_token"] = csrf,
-            ["ts"] = DateTimeOffset.Now.ToUnixTimeSeconds().ToString(),
+            ["ts"] = DateTimeOffset.Now.ToUnixTimeSeconds(),
         };
 
         if (options.Value.FetchLastedVersion)
@@ -124,9 +162,9 @@ public sealed class BiliLiveClient(BiliApiClient client, IOptions<BiliLiveClient
 
         var csrf = client.GetCSRF();
 
-        Dictionary<string, string> form = new()
+        Dictionary<string, object?> form = new()
         {
-            ["room_id"] = roomId.ToString(),
+            ["room_id"] = roomId,
             ["platform"] = platform,
             ["csrf"] = csrf,
             ["csrf_token"] = csrf,
@@ -146,15 +184,15 @@ public sealed class BiliLiveClient(BiliApiClient client, IOptions<BiliLiveClient
             ["web_location"] = "444.8",
         }, cancellationToken)).ReadAsStringAsync(cancellationToken);
 
-        Dictionary<string, string> form = new()
+        Dictionary<string, object?> form = new()
         {
-            ["roomid"] = roomId.ToString(),
+            ["roomid"] = roomId,
             ["csrf"] = csrf,
             ["csrf_token"] = csrf,
             ["msg"] = message,
-            ["rnd"] = DateTimeOffset.Now.ToUnixTimeSeconds().ToString(),
-            ["fontsize"] = fontSize.ToString(),
-            ["color"] = 0xFFFFFF.ToString(),
+            ["rnd"] = DateTimeOffset.Now.ToUnixTimeSeconds(),
+            ["fontsize"] = fontSize,
+            ["color"] = 0xFFFFFF,
         };
 
         return await client.PostFormAsync<JsonElement>($"{url}?{query}", form, cancellationToken);

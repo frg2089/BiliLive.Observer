@@ -1,13 +1,17 @@
-using System.Net;
+ï»¿using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Net.NetworkInformation;
+using System.Text;
 using System.Text.Json;
 
 using BiliLive.Kernel;
 using BiliLive.Kernel.Danmaku;
 using BiliLive.Kernel.Models;
+using BiliLive.Service;
 using BiliLive.Service.Model;
 
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,7 +21,7 @@ CookieContainer cookie = new();
 {
     var path = builder.Configuration.GetValue<string>("Cookie");
     if (string.IsNullOrWhiteSpace(path))
-        throw new InvalidDataException("cookie ÎÄ¼þÂ·¾¶Î´ÉèÖÃ");
+        throw new InvalidDataException("cookie æ–‡ä»¶è·¯å¾„æœªè®¾ç½®");
 
     if (File.Exists(path))
     {
@@ -41,6 +45,7 @@ builder.Services.AddHttpClient<BiliApiClient, BiliApiClient>((client, provider) 
         };
         return handler;
     });
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddTransient<BiliLiveDanmakuClientProvider>();
 builder.Services.AddTransient<BiliLoginClient>();
 builder.Services.AddTransient<BiliLiveClient>();
@@ -61,6 +66,18 @@ app.UseStaticFiles();
 //app.MapStaticAssets();
 app.UseDefaultFiles();
 app.MapFallbackToFile("/index.html");
+
+app.UseExceptionHandler(options =>
+{
+    options.Run(async context =>
+    {
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "text/plain";
+
+        var exception = context.Features.Get<IExceptionHandlerFeature>();
+        await context.Response.WriteAsync($"Server error: {exception?.Error.Message}");
+    });
+});
 
 app.Use(async (context, request) =>
 {
@@ -91,7 +108,7 @@ bili.MapGet("/login/poll", async ([FromQuery] string qrcodeKey, [FromServices] B
     {
         var path = configuration.GetValue<string>("Cookie");
         if (string.IsNullOrWhiteSpace(path))
-            throw new InvalidDataException("cookie ÎÄ¼þÂ·¾¶Î´ÉèÖÃ");
+            throw new InvalidDataException("cookie æ–‡ä»¶è·¯å¾„æœªè®¾ç½®");
 
         await using var fs = File.Create(path);
         await cookie.SaveToAsync(fs, cancellationToken: cancellationToken);
@@ -113,7 +130,7 @@ live.MapGet("/areas", async ([FromServices] BiliLiveClient live, CancellationTok
 live.MapPost(
     "/start",
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, MediaTypeNames.Application.ProblemJson, MediaTypeNames.Application.Json)]
-    async Task<Results<Ok<StartLiveData>, ProblemHttpResult>> ([FromBody] StartLiveRequest request, [FromServices] BiliLiveClient live, CancellationToken cancellationToken) =>
+async Task<Results<Ok<StartLiveData>, ProblemHttpResult>> ([FromBody] StartLiveRequest request, [FromServices] BiliLiveClient live, CancellationToken cancellationToken) =>
     {
         try
         {
@@ -122,7 +139,7 @@ live.MapPost(
         catch (BiliApiResultException e) when (e.Code is 60024)
         {
             var result = e.DataResult.Deserialize<StartLiveData>()
-                ?? throw new BiliApiException("ÎÞ·¨·´ÐòÁÐ»¯Îª¶ÔÏó", e);
+                ?? throw new BiliApiException("æ— æ³•ååºåˆ—åŒ–ä¸ºå¯¹è±¡", e);
 
             return TypedResults.Problem(
                 title: e.Code.ToString(),
@@ -146,6 +163,14 @@ live.MapPost("/update", async ([FromBody] UpdateLiveRequest request, [FromServic
         request.Title, request.AreaId,
         request.AddTag, request.DelTag,
         cancellationToken)));
+
+live.MapPost("/cover", async (IFormFile file, [FromServices] BiliApiClient api, [FromServices] BiliLiveClient live, CancellationToken cancellationToken) =>
+{
+    FileContent fileContent = FileContent.Create(file.ContentType, file.FileName, file.OpenReadStream());
+    var res = await api.UploadImage("live", "new_room_cover", fileContent, cancellationToken);
+
+    await live.UpdatePreLiveInfo("web", "web", 1, cover: res.Location, coverVertical: string.Empty, cancellationToken: cancellationToken);
+}).DisableAntiforgery();
 
 var chat = live.MapGroup("/chat");
 chat.MapPost("/send", async ([FromBody] SendChatRequest request, [FromServices] BiliLiveClient live, CancellationToken cancellationToken) =>

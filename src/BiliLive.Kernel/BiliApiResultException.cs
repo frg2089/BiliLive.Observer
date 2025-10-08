@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace BiliLive.Kernel;
 
@@ -16,7 +16,8 @@ public class BiliApiResultException : BiliApiException
         Code = code;
         RawMessage = message;
         RawResult = raw;
-        DataResult = raw.GetProperty("data");
+        raw.TryGetProperty("data", out var data);
+        DataResult = data;
     }
 
     public BiliApiResultException(int code, JsonElement raw, string message) : base($"[{code}] {message}")
@@ -24,13 +25,15 @@ public class BiliApiResultException : BiliApiException
         Code = code;
         RawMessage = message;
         RawResult = raw;
-        DataResult = raw.GetProperty("data");
+        raw.TryGetProperty("data", out var data);
+        DataResult = data;
     }
     public BiliApiResultException(int code, JsonElement raw, string message, Exception inner) : base($"[{code}] {message}", inner)
     {
         Code = code;
         RawMessage = message;
         RawResult = raw;
-        DataResult = raw.GetProperty("data");
+        raw.TryGetProperty("data", out var data);
+        DataResult = data;
     }
 }
