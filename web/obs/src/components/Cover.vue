@@ -4,14 +4,17 @@
       ref="upload"
       accept="image/*"
       name="file"
+      directory-dnd
       :action="path('/bili/live/cover')"
       :max="1"
       @finish="finish"
       @error="error">
-      <img
-        block
-        object-cover
-        :src="path(`/bili/get?url=${encodeURIComponent(cover)}`)" />
+      <NUploadDragger p-0>
+        <img
+          block
+          object-cover
+          :src="path(`/bili/get?url=${encodeURIComponent(cover)}`)" />
+      </NUploadDragger>
     </NUpload>
   </div>
 </template>
