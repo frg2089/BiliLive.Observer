@@ -166,11 +166,11 @@ live.MapPost("/update", async ([FromBody] UpdateLiveRequest request, [FromServic
         request.AddTag, request.DelTag,
         cancellationToken)));
 
-live.MapPost("/cover", async Task<Results<Ok, ValidationProblem>> (IFormFile file, [FromServices] BiliApiClient api, [FromServices] BiliLiveClient live, CancellationToken cancellationToken) =>
+live.MapPost("/cover", async Task<Results<Ok, ValidationProblem>> (IFormFile file, [FromQuery] bool? force, [FromServices] BiliApiClient api, [FromServices] BiliLiveClient live, CancellationToken cancellationToken) =>
 {
     await using MemoryStream ms = new();
     using Image image = await Image.LoadAsync(file.OpenReadStream(), cancellationToken);
-    if ((double)image.Width / image.Height != 16 / 9d)
+    if (force is not true && (double)image.Width / image.Height != 16 / 9d)
     {
         var errmsg = "图片长宽比必须为 16:9 ！";
         return TypedResults.ValidationProblem(
@@ -179,7 +179,7 @@ live.MapPost("/cover", async Task<Results<Ok, ValidationProblem>> (IFormFile fil
             ],
         errmsg);
     }
-    if (image.Width > 704)
+    if (force is true || image.Width > 704)
     {
         // rate as 16:9, max size as 704*396.
         image.Mutate(context => context.Resize(new ResizeOptions()
