@@ -170,7 +170,7 @@ live.MapPost("/cover", async Task<Results<Ok, ValidationProblem>> (IFormFile fil
 {
     await using MemoryStream ms = new();
     using Image image = await Image.LoadAsync(file.OpenReadStream(), cancellationToken);
-    if (image.Width / image.Height != 16d / 9d)
+    if ((double)image.Width / image.Height != 16 / 9d)
     {
         var errmsg = "图片长宽比必须为 16:9 ！";
         return TypedResults.ValidationProblem(
