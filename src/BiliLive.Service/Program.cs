@@ -169,28 +169,32 @@ live.MapPost("/update", async ([FromBody] UpdateLiveRequest request, [FromServic
 
 live.MapPost("/cover", async Task<Results<Ok, ValidationProblem>> (IFormFile file, [FromServices] BiliApiClient api, [FromServices] BiliLiveClient live, CancellationToken cancellationToken) =>
 {
-    MemoryStream ms = new();  // Do NOT using
-    using Image image = await Image.LoadAsync(file.OpenReadStream());
-    //if (image.Width / image.Height != 16d / 9d)
-    //{
-    //    var errmsg = "图片长宽比必须为 16：9！";
-    //    return TypedResults.ValidationProblem(
-    //        [
-    //            KeyValuePair.Create(HttpStatusCode.BadRequest.ToString(), new[]{ errmsg }),
-    //        ],
-    //    errmsg);
-    //}
+    await using MemoryStream ms = new();
+    using Image image = await Image.LoadAsync(file.OpenReadStream(), cancellationToken);
+    if (image.Width / image.Height != 16d / 9d)
+    {
+        var errmsg = "图片长宽比必须为 16:9 ！";
+        return TypedResults.ValidationProblem(
+            [
+                KeyValuePair.Create("IMAGE_SIZE", new[]{ errmsg }),
+            ],
+        errmsg);
+    }
     if (image.Width > 704)
     {
         // rate as 16:9, max size as 704*396.
-        image.Mutate(context =>
+        image.Mutate(context => context.Resize(new ResizeOptions()
         {
-            context.Resize(new ResizeOptions() { Mode = ResizeMode.Pad, Position = AnchorPositionMode.Center, Size = new(704, 396) });
-        });
+            Mode = ResizeMode.Pad,
+            Position = AnchorPositionMode.Center,
+            Size = new(704, 396),
+        }));
     }
-    await image.SaveAsWebpAsync(ms);
+    // 不支持 Webp
+    await image.SaveAsJpegAsync(ms, cancellationToken: cancellationToken);
+    ms.Seek(0, SeekOrigin.Begin);
 
-    FileContent fileContent = FileContent.Create(MediaTypeNames.Image.Webp, file.FileName, ms);
+    FileContent fileContent = FileContent.Create(MediaTypeNames.Image.Jpeg, "blob", ms);
     var res = await api.UploadImage("live", "new_room_cover", fileContent, cancellationToken);
     await live.UpdatePreLiveInfo("web", "web", 1, cover: res.Location, coverVertical: string.Empty, cancellationToken: cancellationToken);
     return TypedResults.Ok();
