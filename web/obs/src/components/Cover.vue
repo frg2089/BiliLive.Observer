@@ -49,5 +49,6 @@ const finish: UploadOnFinish = ({ file }) => {
 const error: OnError = ({ event }) => {
   const res = JSON.parse((event?.target as XMLHttpRequest).response)
   message.error(res.detail)
+  upload.value?.clear()
 }
 </script>
