@@ -43,12 +43,11 @@ public sealed class BiliApiClient
     internal CookieContainer CookieContainer { get; }
     internal HttpClient Client { get; }
 
-    [ThreadStatic]
-    private static string? s_traceIdentifier;
-    public static string TraceIdentifier
+    private string? _traceIdentifier;
+    public string TraceIdentifier
     {
-        get => s_traceIdentifier ??= Guid.CreateVersion7().ToString();
-        set => s_traceIdentifier = value;
+        get => _traceIdentifier ??= Guid.CreateVersion7().ToString();
+        set => _traceIdentifier = value;
     }
 
     /// <summary>

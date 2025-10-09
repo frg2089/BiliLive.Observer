@@ -34,7 +34,14 @@ CookieContainer cookie = new();
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddHttpClient<BiliApiClient, BiliApiClient>((client, provider) => new BiliApiClient(client, cookie, provider.GetRequiredService<ILogger<BiliApiClient>>()))
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient<BiliApiClient, BiliApiClient>((client, provider) =>
+{
+    BiliApiClient api = new(client, cookie, provider.GetRequiredService<ILogger<BiliApiClient>>());
+    if (provider.GetService<IHttpContextAccessor>() is { HttpContext.TraceIdentifier: { } id })
+        api.TraceIdentifier = id;
+    return api;
+})
     .ConfigurePrimaryHttpMessageHandler(() =>
     {
         HttpClientHandler handler = new()
@@ -78,12 +85,6 @@ app.UseExceptionHandler(options =>
         var exception = context.Features.Get<IExceptionHandlerFeature>();
         await context.Response.WriteAsync($"Server error: {exception?.Error.Message}");
     });
-});
-
-app.Use(async (context, request) =>
-{
-    BiliApiClient.TraceIdentifier = context.TraceIdentifier;
-    await request();
 });
 
 var bili = app.MapGroup("/bili");
