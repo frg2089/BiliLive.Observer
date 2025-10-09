@@ -15,6 +15,9 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+
 var builder = WebApplication.CreateBuilder(args);
 
 CookieContainer cookie = new();
@@ -164,12 +167,33 @@ live.MapPost("/update", async ([FromBody] UpdateLiveRequest request, [FromServic
         request.AddTag, request.DelTag,
         cancellationToken)));
 
-live.MapPost("/cover", async (IFormFile file, [FromServices] BiliApiClient api, [FromServices] BiliLiveClient live, CancellationToken cancellationToken) =>
+live.MapPost("/cover", async Task<Results<Ok, ValidationProblem>> (IFormFile file, [FromServices] BiliApiClient api, [FromServices] BiliLiveClient live, CancellationToken cancellationToken) =>
 {
-    FileContent fileContent = FileContent.Create(file.ContentType, file.FileName, file.OpenReadStream());
-    var res = await api.UploadImage("live", "new_room_cover", fileContent, cancellationToken);
+    MemoryStream ms = new();  // Do NOT using
+    using Image image = await Image.LoadAsync(file.OpenReadStream());
+    //if (image.Width / image.Height != 16d / 9d)
+    //{
+    //    var errmsg = "图片长宽比必须为 16：9！";
+    //    return TypedResults.ValidationProblem(
+    //        [
+    //            KeyValuePair.Create(HttpStatusCode.BadRequest.ToString(), new[]{ errmsg }),
+    //        ],
+    //    errmsg);
+    //}
+    if (image.Width > 704)
+    {
+        // rate as 16:9, max size as 704*396.
+        image.Mutate(context =>
+        {
+            context.Resize(new ResizeOptions() { Mode = ResizeMode.Pad, Position = AnchorPositionMode.Center, Size = new(704, 396) });
+        });
+    }
+    await image.SaveAsWebpAsync(ms);
 
+    FileContent fileContent = FileContent.Create(MediaTypeNames.Image.Webp, file.FileName, ms);
+    var res = await api.UploadImage("live", "new_room_cover", fileContent, cancellationToken);
     await live.UpdatePreLiveInfo("web", "web", 1, cover: res.Location, coverVertical: string.Empty, cancellationToken: cancellationToken);
+    return TypedResults.Ok();
 }).DisableAntiforgery();
 
 var chat = live.MapGroup("/chat");
