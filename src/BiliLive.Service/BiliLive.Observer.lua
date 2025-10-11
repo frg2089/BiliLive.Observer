@@ -1,13 +1,7 @@
 -- 全局对象
 obs = obslua
 local is_windows = package.config:sub(1, 1) == "\\"
-local asmPath = script_path()
-if is_windows then
-    asmPath = asmPath .. '\\BiliLive.Service.dll'
-else
-    asmPath = asmPath .. '/BiliLive.Service.dll'
-end
-
+local asmPath = script_path() .. '/BiliLive.Service.dll'
 
 local ctx = {
     settings = nil,
