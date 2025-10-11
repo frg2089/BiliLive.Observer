@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 
 namespace BiliLive.Kernel.Models;
+
 public sealed record class LiveRoomInfoData(
     [property: JsonPropertyName("uid")] long Uid,
     [property: JsonPropertyName("room_id")] int RoomId,
@@ -71,7 +72,6 @@ public sealed record class NewPendants(
     [property: JsonPropertyName("mobile_frame")] MobileFrame MobileFrame,
     [property: JsonPropertyName("mobile_badge")] object MobileBadge
 );
-
 
 public sealed record class StudioInfo(
     [property: JsonPropertyName("status")] int? Status,

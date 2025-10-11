@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace BiliLive.Kernel.Models.Danmaku;
-
 
 public sealed record class DanmakuExtra(
     [property: JsonPropertyName("send_from_me")] bool? SendFromMe,
@@ -48,7 +42,6 @@ public sealed record class DanmakuExtra(
     [property: JsonPropertyName("hit_combo")] int? HitCombo,
     [property: JsonPropertyName("esports_jump_url")] string EsportsJumpUrl
 );
-
 
 public sealed record class Base(
     [property: JsonPropertyName("face")] string Face,

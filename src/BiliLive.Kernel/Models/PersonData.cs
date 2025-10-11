@@ -38,7 +38,6 @@ public sealed record class PersonData(
     [property: JsonPropertyName("name_render")] object NameRender
 );
 
-
 public sealed record class AvatarIcon(
     [property: JsonPropertyName("icon_type")] int? IconType,
     [property: JsonPropertyName("icon_resource")] IconResource IconResource

@@ -71,7 +71,6 @@ builder.Services.AddTransient<BiliLoginClient>();
 builder.Services.AddTransient<BiliLiveClient>();
 builder.Services.AddOptions<BiliLiveClientOptions>().BindConfiguration("BiliLive");
 
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -87,17 +86,14 @@ app.UseStaticFiles();
 app.UseDefaultFiles();
 app.MapFallbackToFile("/index.html");
 
-app.UseExceptionHandler(options =>
+app.UseExceptionHandler(options => options.Run(async context =>
 {
-    options.Run(async context =>
-    {
-        context.Response.StatusCode = 500;
-        context.Response.ContentType = "text/plain";
+    context.Response.StatusCode = 500;
+    context.Response.ContentType = "text/plain";
 
-        var exception = context.Features.Get<IExceptionHandlerFeature>();
-        await context.Response.WriteAsync($"Server error: {exception?.Error.Message}");
-    });
-});
+    var exception = context.Features.Get<IExceptionHandlerFeature>();
+    await context.Response.WriteAsync($"Server error: {exception?.Error.Message}");
+}));
 
 var bili = app.MapGroup("/bili");
 
@@ -267,4 +263,4 @@ chat.MapGet("/event", async (
     await danmaku.LeaveRoomAsync(cancellationToken);
 }).Produces(StatusCodes.Status206PartialContent, contentType: MediaTypeNames.Text.EventStream);
 
-app.Run();
+await app.RunAsync();

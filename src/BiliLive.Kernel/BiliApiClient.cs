@@ -39,11 +39,14 @@ public sealed class BiliApiClient
     }
 
     public string GetCSRF() => CookieContainer.GetCSRF();
+
     public string GetBuvid3() => CookieContainer.GetBuvid3();
+
     internal CookieContainer CookieContainer { get; }
     internal HttpClient Client { get; }
 
     private string? _traceIdentifier;
+
     public string TraceIdentifier
     {
         get => _traceIdentifier ??= Guid.CreateVersion7().ToString();

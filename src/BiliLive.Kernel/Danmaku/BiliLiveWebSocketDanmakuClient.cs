@@ -1,6 +1,5 @@
 ﻿using System.Net.WebSockets;
 
-using BiliLive.Kernel;
 using BiliLive.Kernel.Models;
 
 using Microsoft.Extensions.Logging;
@@ -126,6 +125,7 @@ public sealed class BiliLiveWebSocketDanmakuClient(
     }
 
     #region Dispose
+
     private void Dispose(bool disposing)
     {
         if (_disposedValue)
@@ -151,5 +151,6 @@ public sealed class BiliLiveWebSocketDanmakuClient(
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
-    #endregion
+
+    #endregion Dispose
 }

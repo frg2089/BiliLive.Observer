@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using System.Text.Json.Serialization;
 
-
 namespace BiliLive.Kernel.Models;
 
 public sealed record class LiveDanmakuServerInfo(

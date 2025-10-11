@@ -28,6 +28,7 @@ public class BiliApiResultException : BiliApiException
         raw.TryGetProperty("data", out var data);
         DataResult = data;
     }
+
     public BiliApiResultException(int code, JsonElement raw, string message, Exception inner) : base($"[{code}] {message}", inner)
     {
         Code = code;

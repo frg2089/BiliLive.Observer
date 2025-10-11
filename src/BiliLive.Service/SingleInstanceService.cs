@@ -1,5 +1,4 @@
-﻿
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO.Pipes;
 
 namespace BiliLive.Service;

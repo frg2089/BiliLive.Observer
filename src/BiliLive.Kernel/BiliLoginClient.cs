@@ -1,6 +1,7 @@
 ﻿using BiliLive.Kernel.Models;
 
 namespace BiliLive.Kernel;
+
 public sealed class BiliLoginClient(BiliApiClient client)
 {
     /// <summary>

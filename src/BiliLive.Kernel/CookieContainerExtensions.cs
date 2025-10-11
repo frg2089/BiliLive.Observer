@@ -6,6 +6,7 @@ namespace BiliLive.Kernel;
 public static class CookieContainerExtensions
 {
     public static string GetCSRF(this CookieContainer cookies) => cookies.GetAllCookies().GetCSRF();
+
     public static string GetCSRF(this CookieCollection cookies)
     {
         foreach (var cookie in cookies.OfType<Cookie>())
@@ -18,6 +19,7 @@ public static class CookieContainerExtensions
     }
 
     public static string GetBuvid3(this CookieContainer cookies) => cookies.GetAllCookies().GetBuvid3();
+
     public static string GetBuvid3(this CookieCollection cookies)
     {
         foreach (var cookie in cookies.OfType<Cookie>())
