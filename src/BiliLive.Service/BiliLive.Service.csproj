@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
+    <OutputType>WinExe</OutputType>
     <!-- 停用原本的 AppHost 生成逻辑 -->
     <UseAppHost>false</UseAppHost>
     <!-- RID 列表 -->

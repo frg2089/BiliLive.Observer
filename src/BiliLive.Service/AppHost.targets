@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
 
   <Target
     Name="_ResolveMultiAppHostRuntimeIdentifier" 
@@ -95,6 +95,12 @@
     Inputs="@(MultiAppHost -> '%(AppHostSourcePath)')"
     Outputs="@(MultiAppHost -> '%(Identity)')"
   >
+    <PropertyGroup>
+      <_UseWindowsGraphicalUserInterface Condition="($(RuntimeIdentifier.StartsWith('win')) or $(DefaultAppHostRuntimeIdentifier.StartsWith('win'))) and '$(OutputType)'=='WinExe'">true</_UseWindowsGraphicalUserInterface>
+      <_EnableMacOSCodeSign Condition="'$(_EnableMacOSCodeSign)' == '' and
+                                      ($(RuntimeIdentifier.StartsWith('osx')) or $(AppHostRuntimeIdentifier.StartsWith('osx')))">true</_EnableMacOSCodeSign>
+    </PropertyGroup>
+
     <MakeDir Directories="$(IntermediateOutputPath)AppHosts" />
     <CreateAppHost
       AppHostSourcePath="%(MultiAppHost.AppHostSourcePath)"
