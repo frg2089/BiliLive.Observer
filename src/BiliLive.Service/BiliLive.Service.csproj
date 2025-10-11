@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <None Include="..\..\web\obs\dist\**\*" Link="wwwroot\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="BiliLive.Observer.lua" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

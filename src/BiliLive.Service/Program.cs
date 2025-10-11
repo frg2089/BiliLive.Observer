@@ -16,14 +16,24 @@ using Microsoft.AspNetCore.Mvc;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 
-var builder = WebApplication.CreateBuilder(args);
+await SingleInstanceService.BeforeInitAsync(args);
+bool allowCloseByApi = args.Any(i => string.Equals(i, "--ALLOW-CLOSE-BY-API"));
+var builder = WebApplication.CreateBuilder(options: new()
+{
+    Args = args,
+    ContentRootPath = AppContext.BaseDirectory,
+});
 
 CookieContainer cookie = new();
 {
     var path = builder.Configuration.GetValue<string>("Cookie");
     if (string.IsNullOrWhiteSpace(path))
-        throw new InvalidDataException("cookie 文件路径未设置");
+        path = ".cookie.json";
 
+    if (builder.Configuration.GetValue<string>(HostDefaults.ContentRootKey) is not { } basePath)
+        throw new InvalidDataException();
+
+    path = Path.Combine(basePath, path);
     if (File.Exists(path))
     {
         await using var fs = File.OpenRead(path);
@@ -35,6 +45,8 @@ CookieContainer cookie = new();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
+if (allowCloseByApi)
+    builder.Services.AddHostedService<SingleInstanceService>();
 builder.Services.AddHttpClient<BiliApiClient, BiliApiClient>((client, provider) =>
 {
     BiliApiClient api = new(client, cookie, provider.GetRequiredService<ILogger<BiliApiClient>>());
