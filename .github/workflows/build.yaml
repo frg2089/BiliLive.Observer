@@ -6,6 +6,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.artifact.outputs.artifact-url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,10 +43,29 @@ jobs:
       - name: Publish .NET
         run: dotnet publish --graph --artifacts-path artifacts --configuration Release --no-restore --no-build
 
-      - name: Collect artifact
+      - id: artifact
+        name: Collect artifact
         uses: actions/upload-artifact@v4
         with:
           name: artifact
           path: |
             ./artifacts/publish/BiliLive.Service/release/*
           retention-days: 7
+
+  publish:
+    needs: build
+    name: 发布
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+      discussions: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download a Build Artifact
+        shell: pwsh
+        run: curl '${{ needs.build.outputs.artifact }}' -o BiliLive.Observer.zip
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: BiliLive.Observer.zip
