@@ -224,13 +224,19 @@ chat.MapGet("/event", async (
     CancellationToken cancellationToken) =>
 {
     context.Response.ContentType = MediaTypeNames.Text.EventStream;
-    await service.JoinAsync(roomId, userId, async (type, data) =>
+    try
     {
-        await context.Response.WriteAsync($"event: {type}\r\n", cancellationToken);
-        await context.Response.WriteAsync($"data: {data}\r\n", cancellationToken);
-        await context.Response.WriteAsync($"\r\n");
-        await context.Response.Body.FlushAsync();
-    }, cancellationToken);
+        await service.JoinAsync(roomId, userId, async (type, data) =>
+        {
+            await context.Response.WriteAsync($"event: {type}\r\n", cancellationToken);
+            await context.Response.WriteAsync($"data: {data}\r\n", cancellationToken);
+            await context.Response.WriteAsync($"\r\n");
+            await context.Response.Body.FlushAsync();
+        }, cancellationToken);
+    }
+    catch (TaskCanceledException)
+    {
+    }
 }).Produces(StatusCodes.Status206PartialContent, contentType: MediaTypeNames.Text.EventStream);
 
 await app.RunAsync();
