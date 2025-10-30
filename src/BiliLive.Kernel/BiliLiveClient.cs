@@ -204,12 +204,14 @@ public sealed class BiliLiveClient(BiliApiClient client, IOptions<BiliLiveClient
 
         var csrf = client.GetCSRF();
 
-        var query = await new FormUrlEncodedContent(await client.SignWithWbiAsync(new()
+        Dictionary<string, string> parameters = new()
         {
             ["id"] = roomId.ToString(),
             ["type"] = "0",
             ["web_location"] = "444.8",
-        }, cancellationToken)).ReadAsStringAsync(cancellationToken);
+        };
+
+        var query = await new FormUrlEncodedContent(await client.SignWithWbiAsync(parameters, cancellationToken)).ReadAsStringAsync(cancellationToken);
 
         return await client.GetAsync<LiveDanmakuServerData>($"{url}?{query}", cancellationToken);
     }

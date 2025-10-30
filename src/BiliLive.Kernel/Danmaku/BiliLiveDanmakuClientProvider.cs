@@ -9,9 +9,16 @@ public sealed class BiliLiveDanmakuClientProvider(IServiceProvider serviceProvid
 {
     public IBiliLiveDanmakuClient Create(LiveDanmakuServerInfo server)
     {
+#if USE_TCP_DANMAKU
+        return new BiliLiveTCPDanmakuClient(
+            server,
+            serviceProvider.GetRequiredService<BiliApiClient>(),
+            serviceProvider.GetRequiredService<ILogger<BiliLiveTCPDanmakuClient>>()); 
+#else
         return new BiliLiveWebSocketDanmakuClient(
-                server,
-                serviceProvider.GetRequiredService<BiliApiClient>(),
-                serviceProvider.GetRequiredService<ILogger<BiliLiveWebSocketDanmakuClient>>());
+            server,
+            serviceProvider.GetRequiredService<BiliApiClient>(),
+            serviceProvider.GetRequiredService<ILogger<BiliLiveWebSocketDanmakuClient>>());
+#endif
     }
 }
