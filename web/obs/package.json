@@ -8,6 +8,7 @@
     "fetch-api": "NODE_TLS_REJECT_UNAUTHORIZED=0 openapi-typescript https://localhost:7073/openapi/v1.json -o ./obj/apis.d.ts"
   },
   "dependencies": {
+    "date-fns": "^4.1.0",
     "naive-ui": "^2.43.1",
     "obs-websocket-js": "^5.0.6",
     "openapi-fetch": "^0.14.1",

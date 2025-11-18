@@ -1,0 +1,42 @@
+<template>
+  <yt-img-shadow
+    class="no-transition"
+    :height="height"
+    :width="width"
+    style="background-color: transparent"
+    loaded>
+    <img
+      id="img"
+      class="style-scope yt-img-shadow"
+      alt=""
+      :height="height"
+      :width="width"
+      :src="showImgUrl"
+      @error="onLoadError" />
+  </yt-img-shadow>
+</template>
+
+<script lang="ts" setup>
+import * as constants from './constants'
+
+const props = defineProps<{
+  imgUrl: string // => showImgUrl
+  height: string
+  width: string
+}>()
+
+const showImgUrl = ref(props.imgUrl)
+watch(
+  () => props.imgUrl,
+  v => {
+    showImgUrl.value = v
+  },
+)
+const onLoadError = () => {
+  if (showImgUrl.value !== constants.DEFAULT_AVATAR_URL) {
+    showImgUrl.value = constants.DEFAULT_AVATAR_URL
+  }
+}
+</script>
+
+<!-- <style src="@/assets/css/youtube/yt-img-shadow.css"></style> -->
