@@ -1,22 +1,22 @@
 ﻿using System.Diagnostics;
 using System.Net;
 
-namespace BiliLive.Kernel.Danmaku;
+namespace BiliLive.Kernel.Event.Models;
 
-public record struct BiliLivePackHeader(
+public record class BiliLiveEventPackHeader(
     int PacketLength,
     short HeaderLength,
-    BiliLivePackBodyType BodyType,
-    BiliLiveOperation Operation,
+    BiliLiveEventPackBodyType BodyType,
+    BiliLiveEventOperation Operation,
     int SequenceId)
 {
     public const int Size = 16;
-    public BiliLivePackHeader(int packetLength, BiliLivePackBodyType protocolVersion, BiliLiveOperation operation)
+    public BiliLiveEventPackHeader(int packetLength, BiliLiveEventPackBodyType protocolVersion, BiliLiveEventOperation operation)
         : this(packetLength, Size, protocolVersion, operation, 1)
     {
     }
 
-    public readonly void WriteTo(Span<byte> span)
+    public void WriteTo(Span<byte> span)
     {
         Debug.Assert(span.Length >= Size);
 
@@ -27,10 +27,10 @@ public record struct BiliLivePackHeader(
         BitConverter.GetBytes(IPAddress.HostToNetworkOrder(SequenceId)).CopyTo(span[12..16]);
     }
 
-    public static BiliLivePackHeader Parse(ReadOnlySpan<byte> span) => new(
+    public static BiliLiveEventPackHeader Parse(ReadOnlySpan<byte> span) => new(
         IPAddress.NetworkToHostOrder(BitConverter.ToInt32(span[0..4])),
         IPAddress.NetworkToHostOrder(BitConverter.ToInt16(span[4..6])),
-        (BiliLivePackBodyType)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(span[6..8])),
-        (BiliLiveOperation)IPAddress.NetworkToHostOrder(BitConverter.ToInt32(span[8..12])),
+        (BiliLiveEventPackBodyType)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(span[6..8])),
+        (BiliLiveEventOperation)IPAddress.NetworkToHostOrder(BitConverter.ToInt32(span[8..12])),
         IPAddress.NetworkToHostOrder(BitConverter.ToInt32(span[12..16])));
 }

@@ -3,7 +3,7 @@ using System.Net.Mime;
 using System.Text.Json;
 
 using BiliLive.Kernel;
-using BiliLive.Kernel.Danmaku;
+using BiliLive.Kernel.Event;
 using BiliLive.Kernel.Models;
 using BiliLive.Service;
 using BiliLive.Service.Model;
@@ -42,6 +42,7 @@ CookieContainer cookie = new();
 }
 
 // Add services to the container.
+builder.Services.AddHttpLogging();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
@@ -66,9 +67,8 @@ builder.Services.AddHttpClient<BiliApiClient, BiliApiClient>((client, provider) 
         return handler;
     });
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
-builder.Services.AddSingleton<DanmakuService>();
-builder.Services.AddHostedService(provider => provider.GetRequiredService<DanmakuService>());
-builder.Services.AddTransient<BiliLiveDanmakuClientProvider>();
+builder.Services.AddTransient<LiveEventServices>();
+builder.Services.AddTransient<BiliLiveEventClientProvider>();
 builder.Services.AddTransient<BiliLoginClient>();
 builder.Services.AddTransient<BiliLiveClient>();
 builder.Services.AddOptions<BiliLiveClientOptions>().BindConfiguration("BiliLive");
@@ -82,6 +82,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseHttpLogging();
 
 app.UseStaticFiles();
 //app.MapStaticAssets();
@@ -220,23 +221,7 @@ chat.MapGet("/event", async (
     HttpContext context,
     [FromQuery] int roomId,
     [FromQuery] long userId,
-    [FromServices] DanmakuService service,
-    CancellationToken cancellationToken) =>
-{
-    context.Response.ContentType = MediaTypeNames.Text.EventStream;
-    try
-    {
-        await service.JoinAsync(roomId, userId, async (type, data) =>
-        {
-            await context.Response.WriteAsync($"event: {type}\r\n", cancellationToken);
-            await context.Response.WriteAsync($"data: {data}\r\n", cancellationToken);
-            await context.Response.WriteAsync($"\r\n");
-            await context.Response.Body.FlushAsync();
-        }, cancellationToken);
-    }
-    catch (TaskCanceledException)
-    {
-    }
-}).Produces(StatusCodes.Status206PartialContent, contentType: MediaTypeNames.Text.EventStream);
+    [FromServices] LiveEventServices liveEventServices,
+    CancellationToken cancellationToken) => TypedResults.ServerSentEvents(liveEventServices.GetLiveEventsAsync(roomId, userId, cancellationToken)));
 
 await app.RunAsync();

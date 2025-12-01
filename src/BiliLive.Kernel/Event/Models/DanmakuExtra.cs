@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace BiliLive.Kernel.Models.Danmaku;
+namespace BiliLive.Kernel.Event.Models;
 
 public sealed record class DanmakuExtra(
     [property: JsonPropertyName("send_from_me")] bool? SendFromMe,

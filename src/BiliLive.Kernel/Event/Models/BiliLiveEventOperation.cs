@@ -1,6 +1,6 @@
-﻿namespace BiliLive.Kernel.Danmaku;
+﻿namespace BiliLive.Kernel.Event.Models;
 
-public enum BiliLiveOperation : int
+public enum BiliLiveEventOperation : int
 {
     /// <summary>
     /// 心跳 Client -> Server
