@@ -5,7 +5,7 @@
         <yt-icon
           v-if="isAdmin"
           class="style-scope yt-live-chat-author-badge-renderer">
-          <ModeratorIcon />
+          <img src="../../assets/moderator.svg" />
         </yt-icon>
         <img
           v-else
