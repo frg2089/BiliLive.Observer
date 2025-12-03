@@ -7,7 +7,7 @@
     <Ticker
       class="style-scope yt-live-chat-renderer"
       v-model:messages="paidMessages"
-      :showGiftName="showGiftName" />
+      :show-gift-name="showGiftName" />
     <yt-live-chat-item-list-renderer
       class="style-scope yt-live-chat-renderer"
       allow-scroll>
@@ -31,7 +31,7 @@
             <ChatItemBox
               v-for="message in messages"
               :key="message.id"
-              :showGiftName="props.showGiftName"
+              :show-gift-name="props.showGiftName"
               :message="message" />
           </div>
         </div>
@@ -41,15 +41,9 @@
 </template>
 
 <script lang="ts" setup>
-// import _ from 'lodash'
-
-// import * as chatConfig from '@/api/chatConfig'
-
-import * as types from '../../types/ChatMessageType'
-import ChatItemBox from './ChatItemBox.vue'
+import * as types from './ChatMessageType'
 import * as constants from './constants'
 import { DanmakuQueue } from './DanmakuQueue'
-import Ticker from './Ticker.vue'
 
 const scroller = useTemplateRef('scroller')
 const itemOffset = useTemplateRef('itemOffset')
@@ -68,11 +62,10 @@ const SCROLLED_TO_BOTTOM_EPSILON = 15
 const props = withDefaults(
   defineProps<{
     maxNumber: number
-    showGiftName: boolean
+    showGiftName?: boolean
   }>(),
   {
     maxNumber: 60,
-    showGiftName: false,
   },
 )
 
@@ -94,9 +87,9 @@ const onScroll = () => {
   // TODO: ...
 }
 const refreshCantScrollStartTime = () => {
-  if (cantScrollStartTime.value) {
-    cantScrollStartTime.value = new Date()
-  }
+  if (!cantScrollStartTime.value) return
+
+  cantScrollStartTime.value = new Date()
 }
 </script>
 

@@ -3,19 +3,19 @@
     v-if="message.type === types.MessageType.TEXT"
     class="style-scope yt-live-chat-item-list-renderer"
     :time="message.time"
-    :avatarUrl="message.avatarUrl"
-    :authorName="message.authorName"
-    :authorType="message.authorType"
-    :privilegeType="message.privilegeType"
-    :contentParts="getShowContentParts(message)" />
+    :avatar-url="message.avatarUrl"
+    :author-name="message.authorName"
+    :author-type="message.authorType"
+    :privilege-type="message.privilegeType"
+    :content-parts="getShowContentParts(message)" />
   <PaidMessage
     v-else-if="message.type === types.MessageType.GIFT"
     class="style-scope yt-live-chat-item-list-renderer"
     :time="message.time"
-    :avatarUrl="message.avatarUrl"
-    :authorName="getShowAuthorName(message)"
+    :avatar-url="message.avatarUrl"
+    :author-name="getShowAuthorName(message)"
     :price="message.price"
-    :priceText="message.price <= 0 ? getGiftShowNameAndNum(message) : ''"
+    :price-text="message.price <= 0 ? getGiftShowNameAndNum(message) : ''"
     :content="
       message.price <= 0 ? '' : getGiftShowContent(message, showGiftName)
     " />
@@ -23,23 +23,22 @@
     v-else-if="message.type === types.MessageType.MEMBER"
     class="style-scope yt-live-chat-item-list-renderer"
     :time="message.time"
-    :avatarUrl="message.avatarUrl"
-    :authorName="getShowAuthorName(message)"
-    :privilegeType="message.privilegeType"
+    :avatar-url="message.avatarUrl"
+    :author-name="getShowAuthorName(message)"
+    :privilege-type="message.privilegeType"
     :title="message.title" />
   <PaidMessage
     v-else-if="message.type === types.MessageType.SUPER_CHAT"
     class="style-scope yt-live-chat-item-list-renderer"
     :time="message.time"
-    :avatarUrl="message.avatarUrl"
-    :authorName="getShowAuthorName(message)"
+    :avatar-url="message.avatarUrl"
+    :author-name="getShowAuthorName(message)"
     :price="message.price"
-    :priceText="''"
     :content="getShowContent(message)" />
 </template>
 
 <script lang="ts" setup>
-import * as types from '../../types/ChatMessageType'
+import * as types from './ChatMessageType'
 import {
   getGiftShowContent,
   getGiftShowNameAndNum,
@@ -47,17 +46,9 @@ import {
   getShowContent,
   getShowContentParts,
 } from './constants'
-import MembershipItem from './MembershipItem.vue'
-import PaidMessage from './PaidMessage.vue'
-import TextMessage from './TextMessage.vue'
 
-withDefaults(
-  defineProps<{
-    message: types.AnyDisplayMessage
-    showGiftName: boolean
-  }>(),
-  {
-    showGiftName: false,
-  },
-)
+defineProps<{
+  message: types.AnyDisplayMessage
+  showGiftName?: boolean
+}>()
 </script>

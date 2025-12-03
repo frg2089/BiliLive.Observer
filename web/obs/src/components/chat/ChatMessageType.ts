@@ -129,7 +129,7 @@ export interface TextMessage extends MessageBase {
 /** 一段内容 */
 export type AnyContentPart = TextContentPart | ImageContentPart
 
-/** */
+/** 一段文本内容 */
 export interface TextContentPart {
   /** 内容类型 */
   type: ContentPartType.TEXT
@@ -170,6 +170,7 @@ export interface GiftMessage extends MessageBase {
   /** 礼物图标URL */
   giftIconUrl: string
 }
+
 /** 上舰消息 */
 export interface MemberMessage extends MessageBase {
   /** 消息类型 */
@@ -185,7 +186,6 @@ export interface MemberMessage extends MessageBase {
 }
 
 /** 醒目留言消息 */
-
 export interface SuperChatMessage extends MessageBase {
   /** 消息类型 */
   type: MessageType.SUPER_CHAT

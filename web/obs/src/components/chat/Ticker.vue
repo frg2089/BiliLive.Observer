@@ -37,7 +37,7 @@
                 height="24"
                 width="24"
                 class="style-scope yt-live-chat-ticker-paid-message-item-renderer"
-                :imgUrl="message.raw.avatarUrl" />
+                :img-url="message.raw.avatarUrl" />
               <span
                 id="text"
                 dir="ltr"
@@ -53,18 +53,17 @@
       <MembershipItem
         v-if="pinnedMessage.type === types.MessageType.MEMBER"
         class="style-scope yt-live-chat-ticker-renderer"
-        :avatarUrl="pinnedMessage.avatarUrl"
-        :authorName="getShowAuthorName(pinnedMessage)"
-        :privilegeType="pinnedMessage.privilegeType"
+        :avatar-url="pinnedMessage.avatarUrl"
+        :author-name="getShowAuthorName(pinnedMessage)"
+        :privilege-type="pinnedMessage.privilegeType"
         :title="pinnedMessage.title"
         :time="pinnedMessage.time" />
       <PaidMessage
         v-else
         class="style-scope yt-live-chat-ticker-renderer"
         :price="pinnedMessage.price"
-        :priceText="''"
-        :avatarUrl="pinnedMessage.avatarUrl"
-        :authorName="getShowAuthorName(pinnedMessage)"
+        :avatar-url="pinnedMessage.avatarUrl"
+        :author-name="getShowAuthorName(pinnedMessage)"
         :time="pinnedMessage.time"
         :content="pinnedMessageShowContent" />
     </template>
@@ -77,36 +76,30 @@
 import { TransitionGroup } from 'vue'
 import { NScrollbar } from 'naive-ui'
 
-import * as types from '../../types/ChatMessageType'
+import * as types from './ChatMessageType'
 import {
   getGiftShowContent,
   getPriceConfig,
   getShowAuthorName,
   getShowContent,
 } from './constants'
-import ImgShadow from './ImgShadow.vue'
-import MembershipItem from './MembershipItem.vue'
-import PaidMessage from './PaidMessage.vue'
 
 const scrollbar = useTemplateRef('scrollbar')
 
-const props = withDefaults(
-  defineProps<{
-    messages: Exclude<types.AnyDisplayMessage, types.TextMessage>[]
-    showGiftName: boolean
-  }>(),
-  {
-    showGiftName: false,
-  },
-)
+const props = defineProps<{
+  messages: Exclude<types.AnyDisplayMessage, types.TextMessage>[]
+  showGiftName?: boolean
+}>()
 
 const emit = defineEmits<{
   (
     e: 'update:messages',
-    value: Exclude<types.AnyDisplayMessage, types.TextMessage>[],
+    ev: Exclude<types.AnyDisplayMessage, types.TextMessage>[],
   ): void
 }>()
 
+const curTime = ref(new Date())
+const pinnedMessage = ref<Exclude<types.AnyDisplayMessage, types.TextMessage>>() // really?
 const showMessages = computed(() => {
   let res = []
   for (let message of props.messages) {
@@ -123,16 +116,13 @@ const showMessages = computed(() => {
   return res
 })
 const pinnedMessageShowContent = computed(() => {
-  if (!pinnedMessage.value) {
-    return ''
-  }
-  if (pinnedMessage.value.type === types.MessageType.GIFT) {
-    return getGiftShowContent(pinnedMessage.value, props.showGiftName)
-  } else {
-    return getShowContent(pinnedMessage.value)
-  }
-})
+  if (!pinnedMessage.value) return ''
 
+  if (pinnedMessage.value.type === types.MessageType.GIFT)
+    return getGiftShowContent(pinnedMessage.value, props.showGiftName)
+
+  return getShowContent(pinnedMessage.value)
+})
 onBeforeUnmount(() => {
   window.clearInterval(updateTimerId.value)
 })
@@ -254,6 +244,7 @@ const updateProgress = () => {
     emit('update:messages', filteredMessages)
   }
 }
+const updateTimerId = ref(window.setInterval(updateProgress, 1000))
 const onItemClick = (
   message: Exclude<types.AnyDisplayMessage, types.TextMessage>,
 ) => {
@@ -263,10 +254,6 @@ const onItemClick = (
     pinnedMessage.value = message
   }
 }
-
-const curTime = ref(new Date())
-const updateTimerId = ref(window.setInterval(updateProgress, 1000))
-const pinnedMessage = ref<Exclude<types.AnyDisplayMessage, types.TextMessage>>() // really?
 </script>
 
 <!-- <style src="@/assets/css/youtube/yt-live-chat-ticker-renderer.css"></style>

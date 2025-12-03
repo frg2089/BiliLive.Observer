@@ -12,7 +12,7 @@
           height="40"
           width="40"
           class="style-scope yt-live-chat-membership-item-renderer"
-          :imgUrl="avatarUrl" />
+          :img-url="avatarUrl" />
         <div
           id="header-content"
           class="style-scope yt-live-chat-membership-item-renderer">
@@ -24,10 +24,10 @@
               class="style-scope yt-live-chat-membership-item-renderer">
               <AuthorChip
                 class="style-scope yt-live-chat-membership-item-renderer"
-                isInMemberMessage
-                :authorName="authorName"
-                :authorType="0"
-                :privilegeType="privilegeType" />
+                is-in-member-message
+                :author-name="authorName"
+                :author-type="0"
+                :privilege-type="privilegeType" />
             </div>
             <div
               id="header-subtext"
@@ -48,9 +48,7 @@
 
 <script lang="ts" setup>
 // import * as utils from '@/utils'
-import * as types from '../../types/ChatMessageType'
-import AuthorChip from './AuthorChip.vue'
-import ImgShadow from './ImgShadow.vue'
+import * as types from './ChatMessageType'
 
 const props = defineProps<{
   avatarUrl: string

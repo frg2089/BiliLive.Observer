@@ -19,7 +19,7 @@
           height="40"
           width="40"
           class="style-scope yt-live-chat-paid-message-renderer"
-          :imgUrl="avatarUrl" />
+          :img-url="avatarUrl" />
         <div
           id="header-content"
           class="style-scope yt-live-chat-paid-message-renderer">
@@ -58,7 +58,6 @@
 
 <script lang="ts" setup>
 import * as constants from './constants'
-import ImgShadow from './ImgShadow.vue'
 
 // import * as utils from '@/utils'
 

@@ -28,14 +28,12 @@ const props = defineProps<{
 const showImgUrl = ref(props.imgUrl)
 watch(
   () => props.imgUrl,
-  v => {
-    showImgUrl.value = v
-  },
+  v => (showImgUrl.value = v),
 )
 const onLoadError = () => {
-  if (showImgUrl.value !== constants.DEFAULT_AVATAR_URL) {
-    showImgUrl.value = constants.DEFAULT_AVATAR_URL
-  }
+  if (showImgUrl.value === constants.DEFAULT_AVATAR_URL) return
+
+  showImgUrl.value = constants.DEFAULT_AVATAR_URL
 }
 </script>
 

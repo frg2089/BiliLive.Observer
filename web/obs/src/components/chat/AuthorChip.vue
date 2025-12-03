@@ -17,27 +17,25 @@
       <AuthorBadge
         v-if="isInMemberMessage"
         class="style-scope yt-live-chat-author-chip"
-        :isAdmin="false"
-        :privilegeType="privilegeType" />
+        :privilege-type="privilegeType" />
       <template v-else>
         <AuthorBadge
           v-if="authorType === types.AuthorType.ADMIN"
           class="style-scope yt-live-chat-author-chip"
-          isAdmin
-          :privilegeType="0" />
+          is-admin
+          :privilege-type="0" />
         <AuthorBadge
           v-if="privilegeType > 0"
           class="style-scope yt-live-chat-author-chip"
-          :isAdmin="false"
-          :privilegeType="privilegeType" />
+          :privilege-type="privilegeType" />
       </template>
     </span>
   </yt-live-chat-author-chip>
 </template>
 
 <script lang="ts" setup>
-import * as types from '../../types/ChatMessageType'
 import AuthorBadge from './AuthorBadge.vue'
+import * as types from './ChatMessageType'
 
 const props = defineProps<{
   isInMemberMessage: boolean

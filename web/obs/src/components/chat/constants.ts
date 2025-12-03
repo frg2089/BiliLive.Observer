@@ -1,20 +1,19 @@
 // import * as i18n from '@/i18n'
-import { GuardLevel } from '../../types/ChatMessageType'
+import { GuardLevel } from './ChatMessageType'
 import type {
   AnyDisplayMessage,
   GiftMessage,
   SuperChatMessage,
   TextMessage,
-} from '../../types/ChatMessageType'
+} from './ChatMessageType'
 
 /**
  * 获取等级对应的文字
  * @param guardLevel
  * @deprecated 改用 `GuardLevel.getText`
  */
-export function getShowGuardLevelText(guardLevel: GuardLevel) {
-  return GuardLevel.getText(guardLevel)
-}
+export const getShowGuardLevelText = (guardLevel: GuardLevel) =>
+  GuardLevel.getText(guardLevel)
 
 // /** @deprecated 改为从 ChatMessageType 导入 */
 export enum MessageType {
@@ -143,7 +142,7 @@ const PRICE_CONFIGS = [
   },
 ]
 
-export function getPriceConfig(price: number = 0) {
+export const getPriceConfig = (price: number = 0) => {
   let i = 0
   // 根据先验知识，从小找到大通常更快结束
   for (; i < PRICE_CONFIGS.length - 1; i++) {
@@ -155,14 +154,16 @@ export function getPriceConfig(price: number = 0) {
   return PRICE_CONFIGS[i]
 }
 
-export function getShowContent(message: AnyDisplayMessage): string | undefined {
+export const getShowContent = (
+  message: AnyDisplayMessage,
+): string | undefined => {
   if ('translation' in message)
     return `${message.content}（${message.translation}）`
 
   return (message as any)?.content
 }
 
-export function getShowContentParts(message: TextMessage) {
+export const getShowContentParts = (message: TextMessage) => {
   let contentParts = [...message.contentParts]
   if (message.translation) {
     contentParts.push({
@@ -173,10 +174,10 @@ export function getShowContentParts(message: TextMessage) {
   return contentParts
 }
 
-export function getGiftShowContent(
+export const getGiftShowContent = (
   message: GiftMessage,
-  showGiftName: boolean,
-) {
+  showGiftName?: boolean,
+) => {
   if (!showGiftName) return ''
 
   return `赠送 ${getGiftShowNameAndNum(message)}`

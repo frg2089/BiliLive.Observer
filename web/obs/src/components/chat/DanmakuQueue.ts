@@ -1,4 +1,4 @@
-import * as types from '../../types/ChatMessageType'
+import * as types from './ChatMessageType'
 
 export class DanmakuQueue {
   messages = reactive<types.AnyDisplayMessage[]>([])

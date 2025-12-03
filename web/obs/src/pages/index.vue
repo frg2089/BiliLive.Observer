@@ -160,7 +160,6 @@ const options = computed(
     ) ?? [],
 )
 
-
 const init = async () => {
   obs.connect()
   loading.value = true
@@ -171,7 +170,7 @@ const init = async () => {
       updateRoomInfoByUserId(),
       updateRoomInfo(),
     ])
-    
+
     if (!user.data?.isLogin) {
       router.push('/login')
       return
