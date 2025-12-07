@@ -8,26 +8,26 @@
     "fetch-api": "NODE_TLS_REJECT_UNAUTHORIZED=0 openapi-typescript https://localhost:7073/openapi/v1.json -o ./obj/apis.d.ts"
   },
   "dependencies": {
-    "naive-ui": "^2.43.1",
-    "obs-websocket-js": "^5.0.6",
-    "openapi-fetch": "^0.14.1",
-    "pinia": "^3.0.3",
-    "pinia-plugin-persistedstate": "^4.5.0",
-    "vue": "^3.5.22",
-    "vue-router": "^4.5.1"
+    "naive-ui": "^2.43.2",
+    "obs-websocket-js": "^5.0.7",
+    "openapi-fetch": "^0.15.0",
+    "pinia": "^3.0.4",
+    "pinia-plugin-persistedstate": "^4.7.1",
+    "vue": "^3.5.25",
+    "vue-router": "^4.6.3"
   },
   "devDependencies": {
-    "@tsconfig/node22": "^22.0.2",
+    "@tsconfig/node22": "^22.0.5",
     "@types/obs-studio": "^2.17.2",
-    "@vitejs/plugin-vue": "^6.0.1",
-    "@vue/tsconfig": "^0.7.0",
-    "openapi-typescript": "^7.9.1",
-    "sass": "^1.93.2",
-    "unocss": "^66.5.2",
-    "unplugin-auto-import": "^19.3.0",
-    "unplugin-vue-components": "^28.8.0",
-    "unplugin-vue-router": "^0.14.0",
-    "vite": "^7.1.11",
-    "vue-tsc": "^3.1.1"
+    "@vitejs/plugin-vue": "^6.0.2",
+    "@vue/tsconfig": "^0.8.1",
+    "openapi-typescript": "^7.10.1",
+    "sass": "^1.94.2",
+    "unocss": "^66.5.10",
+    "unplugin-auto-import": "^20.3.0",
+    "unplugin-vue-components": "^30.0.0",
+    "unplugin-vue-router": "^0.19.0",
+    "vite": "^7.2.6",
+    "vue-tsc": "^3.1.6"
   }
 }
