@@ -101,13 +101,13 @@ export interface MessageBase {
   medalName: string
 
   /** @deprecated */
-  $add: Partial<AnyDisplayMessage>
+  $add?: Partial<AnyDisplayMessage>
   /** @deprecated */
-  title: string
+  title?: string
   /** @deprecated */
-  repeated: number
+  repeated?: number
   /** @deprecated */
-  addTime: Date
+  addTime?: Date
 }
 
 /**
@@ -123,7 +123,7 @@ export interface TextMessage extends MessageBase {
   /** 解析后的内容，包括文本、图片 */
   contentParts: AnyContentPart[]
   /** 内容的翻译，刚添加时一般是空的，之后通过更新消息赋值 */
-  translation: string
+  translation?: string
 }
 
 /** 一段内容 */
@@ -156,7 +156,7 @@ export interface GiftMessage extends MessageBase {
   /** 消息类型 */
   type: MessageType.GIFT
   /** 用户名读音 */
-  authorNamePronunciation: string
+  authorNamePronunciation?: string
   /** 总价（元），免费礼物则为0 */
   price: number
   /** 礼物名 */
@@ -176,7 +176,7 @@ export interface MemberMessage extends MessageBase {
   /** 消息类型 */
   type: MessageType.MEMBER
   /** 用户名读音 */
-  authorNamePronunciation: string
+  authorNamePronunciation?: string
   /** 数量 */
   num: number
   /** 单位（"月"） */
@@ -190,11 +190,11 @@ export interface SuperChatMessage extends MessageBase {
   /** 消息类型 */
   type: MessageType.SUPER_CHAT
   /** 用户名读音 */
-  authorNamePronunciation: string
+  authorNamePronunciation?: string
   /** 价格（元） */
   price: number
   /** 内容 */
   content: string
   /** 内容的翻译，刚添加时一般是空的，之后通过更新消息赋值 */
-  translation: string
+  translation?: string
 }

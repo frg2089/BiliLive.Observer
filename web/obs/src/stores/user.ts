@@ -7,6 +7,7 @@ export const useUser = defineStore('user', () => {
   const data = ref<components['schemas']['PersonData']>()
   const areas = ref<Array<components['schemas']['LiveAreaCategory']>>()
   const userId = computed(() => data.value?.mid)
+  const roomId = ref<number>()
 
   const updateUserInfo = async () => {
     const res1 = await client.GET('/bili/current')
@@ -15,6 +16,15 @@ export const useUser = defineStore('user', () => {
     if (data.value?.isLogin !== true) {
       data.value = undefined
     }
+
+    const resRoom = await client.GET('/bili/live/infoByUid', {
+      params: {
+        query: {
+          userId: userId.value!,
+        },
+      },
+    })
+    roomId.value = resRoom.data?.roomid ?? undefined
   }
 
   const updateAreas = async () => {
@@ -26,6 +36,7 @@ export const useUser = defineStore('user', () => {
     data,
     areas,
     userId,
+    roomId,
     updateUserInfo,
     updateAreas,
   }

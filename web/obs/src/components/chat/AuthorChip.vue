@@ -38,7 +38,7 @@ import AuthorBadge from './AuthorBadge.vue'
 import * as types from './ChatMessageType'
 
 const props = defineProps<{
-  isInMemberMessage: boolean
+  isInMemberMessage?: boolean
   authorName: string
   authorType: types.AuthorType
   privilegeType: types.GuardLevel

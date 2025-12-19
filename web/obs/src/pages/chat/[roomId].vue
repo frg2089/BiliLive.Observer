@@ -1,215 +1,139 @@
 <template>
-  <div mx-4>
-    <div>
-      <div v-for="item in data">
-        <div v-if="item.type === 'Comment'" class="comment-item">
-          <img
-            class="avatar"
-            :src="get(item.userAvatar)"
-            :alt="item.userName" />
-          <span class="username">{{ item.userName }}</span>
-          <span class="comment">{{ item.commentText }}</span>
+  <yt-live-chat-renderer
+    class="style-scope yt-live-chat-app"
+    style="--scrollbar-width: 11px"
+    hide-timestamps
+    @mousemove="refreshCantScrollStartTime">
+    <Ticker
+      class="style-scope yt-live-chat-renderer"
+      v-model:messages="paidMessages"
+      :show-gift-name="showGiftName" />
+    <yt-live-chat-item-list-renderer
+      class="style-scope yt-live-chat-renderer"
+      allow-scroll>
+      <div
+        ref="scroller"
+        id="item-scroller"
+        class="style-scope yt-live-chat-item-list-renderer animated"
+        @scroll="onScroll">
+        <div
+          ref="itemOffset"
+          id="item-offset"
+          class="style-scope yt-live-chat-item-list-renderer">
+          <div
+            ref="items"
+            id="items"
+            class="style-scope yt-live-chat-item-list-renderer"
+            style="overflow: hidden"
+            :style="{
+              transform: `translateY(${Math.floor(scrollPixelsRemaining)}px)`,
+            }">
+            <ChatItemBox
+              v-for="message in messages"
+              :key="message.id"
+              :show-gift-name="props.showGiftName"
+              :message="message" />
+          </div>
         </div>
-        <div v-else>{{ item }}</div>
       </div>
-    </div>
-
-    <div>人气值: {{ hot }}</div>
-  </div>
+    </yt-live-chat-item-list-renderer>
+  </yt-live-chat-renderer>
 </template>
 
 <script lang="ts" setup>
-import { SSE } from 'sse.js'
+import * as types from '../../components/chat/ChatMessageType'
+import { EventClient } from '../../components/chat/EventClient'
 
-import { client, pathChecker } from '../../api'
-import { useUser } from '../../stores/user'
+const props = withDefaults(
+  defineProps<{
+    maxNumber: number
+    showGiftName?: boolean
+  }>(),
+  {
+    maxNumber: 60,
+  },
+)
 
 const route = useRoute()
-
-const hot = ref(0)
-const data = reactive<Bili.Live.Danmaku.Event[]>([])
 const user = useUser()
+await user.updateUserInfo()
+const eventClient = new EventClient(
+  // make sense though no need.
+  'roomId' in route.params ? route.params.roomId : `${user.roomId}`,
+  user.userId ?? 0,
+)
 
-const guardLevelMap = {
-  3: '舰长',
-  2: '提督',
-  1: '总督',
+const messages = eventClient.messages
+// const paidMessages = computed(
+//   () =>
+//     messages.filter(i => i.type !== types.MessageType.TEXT) as Exclude<
+//       types.AnyDisplayMessage,
+//       types.TextMessage
+//     >,
+// )
+
+/* original blivechat scrolling control logic
+
+const scroller = useTemplateRef('scroller')
+const itemOffset = useTemplateRef('itemOffset')
+const items = useTemplateRef('items')
+
+// 发送消息时间间隔范围
+const MESSAGE_MIN_INTERVAL = 80
+const MESSAGE_MAX_INTERVAL = 1000
+
+// 每次发送消息后增加的动画时间，要比MESSAGE_MIN_INTERVAL稍微大一点，太小了动画不连续，太大了发送消息时会中断动画
+// 84 = ceil((1000 / 60) * 5)
+const CHAT_SMOOTH_ANIMATION_TIME_MS = 84
+// 滚动条距离底部小于多少像素则认为在底部
+const SCROLLED_TO_BOTTOM_EPSILON = 15
+
+const atBottom = ref<boolean>(true)
+const scrollPixelsRemaining = ref<number>(0)
+const cantScrollStartTime = ref<Date>()
+
+const onScroll = () => {
+  refreshCantScrollStartTime()
+  atBottom = scroller.value.scrollHeight - scroller.value.scrollTop - scroller.value.clientHeight < SCROLLED_TO_BOTTOM_EPSILON
+  // flushMessagesBuffer()
 }
-
-const get = (url: string) =>
-  pathChecker(`/bili/get?url=${encodeURIComponent(url)}`)
-const push = (item: Bili.Live.Danmaku.Event) => {
-  data.push(item)
-  // TODO: 取消此处注释
-  // setTimeout(data.shift, 20 * 1000)
-}
-
-const init = async () => {
-  if (!('roomId' in route.params)) return
-  await user.updateUserInfo()
-
-  const sse = new SSE(
-    pathChecker(
-      `/bili/live/chat/event?roomId=${route.params.roomId}&userId=${user.userId ?? 0}`,
-    ),
-  )
-
-  sse.addEventListener('hot', (e: CustomEvent & { data: string }) => {
-    hot.value = Number(e.data)
-  })
-
-  sse.addEventListener('notification', (e: CustomEvent & { data: string }) => {
-    const item = JSON.parse(e.data) as any
-
-    switch (item.cmd) {
-      case 'LIVE':
-        push({
-          type: 'LiveStart',
-          roomID: item.roomid,
-        })
-        break
-      case 'PREPARING':
-        push({
-          type: 'LiveEnd',
-          roomID: item.roomid,
-        })
-        break
-      case 'DANMU_MSG':
-        push({
-          type: 'Comment',
-          commentText: item.info[1],
-          userID: item.info[2][0],
-          userAvatar: item.info[0][15].user.base.face,
-          userName: item.info[2][1],
-          isAdmin: item.info[2][2] === '1',
-          isVIP: item.info[2][3] === '1',
-          userGuardLevel: item.info[7],
-        })
-        break
-      case 'SEND_GIFT':
-        push({
-          type: 'GiftSend',
-          giftName: item.data.giftName,
-          userName: item.data.uname,
-          userID: item.data.uid,
-          giftCount: item.data.num,
-        })
-        break
-      case 'GIFT_TOP':
-        push({
-          type: 'GiftTop',
-          giftRanking: item.data.map((v: any) => ({
-            uid: v.uid,
-            userName: v.uname,
-            coin: v.coin,
-          })),
-        })
-        break
-      case 'WELCOME':
-        push({
-          type: 'Welcome',
-          userName: item.data.uname,
-          userID: item.data.uid,
-          isVIP: true,
-          isAdmin: item.data.isadmin === '1',
-        })
-        break
-      case 'WELCOME_GUARD':
-        push({
-          type: 'WelcomeGuard',
-          userName: item.data.username,
-          userID: item.data.uid,
-          userGuardLevel: item.data.guard_level,
-        })
-        break
-      case 'GUARD_BUY':
-        push({
-          type: 'GuardBuy',
-          userID: item.data.uid,
-          userName: item.data.username,
-          userGuardLevel: item.data.guard_level,
-          giftName:
-            guardLevelMap[
-              item.data.guard_level as keyof typeof guardLevelMap
-            ] ?? '',
-          giftCount: item.data.num,
-        })
-        break
-      case 'SUPER_CHAT_MESSAGE':
-      case 'SUPER_CHAT_MESSAGE_JP':
-        push({
-          type: 'SuperChat',
-          commentText: item.data.message,
-          userID: item.data.uid,
-          userName: item.data.user_info.uname,
-          price: item.data.price,
-          scKeepTime: item.data.time,
-        })
-        break
-      case 'INTERACT_WORD':
-        push({
-          type: 'Interact',
-          userName: item.data.uname,
-          userID: item.data.uid,
-          interactType: item.data.msg_type,
-        })
-        break
-      case 'WARNING':
-        push({
-          type: 'Warning',
-          commentText: item.msg,
-        })
-        break
-      case 'CUT_OFF':
-        push({
-          type: 'LiveEnd',
-          commentText: item.msg,
-        })
-        break
-      case 'WATCHED_CHANGE':
-        push({
-          type: 'WatchedChange',
-          watchedCount: item.data.num,
-        })
-        break
-      default:
-        if (item.cmd && item.cmd.startsWith('DANMU_MSG')) {
-          push({
-            type: 'Comment',
-            commentText: item.info[1],
-            userID: item.info[2][0],
-            userAvatar: item.info[0][15].user.base.face,
-            userName: item.info[2][1],
-            isAdmin: item.info[2][2] === '1',
-            isVIP: item.info[2][3] === '1',
-            userGuardLevel: item.info[7],
-          })
-        }
-        break
+const flushMessagesBuffer = async () => {
+  if (this.messagesBuffer.length <= 0) {
+    return
+  }
+  if (!this.canScrollToBottomOrTimedOut()) {
+    if (this.messagesBuffer.length > this.maxNumber) {
+      // 未显示消息数 > 最大可显示数，丢弃
+      this.messagesBuffer.splice(0, this.messagesBuffer.length - this.maxNumber)
     }
-  })
+    return
+  }
+
+  let removeNum = Math.max(this.messages.length + this.messagesBuffer.length - this.maxNumber, 0)
+  if (removeNum > 0) {
+    this.messages.splice(0, removeNum)
+    // 防止同时添加和删除项目时所有的项目重新渲染 https://github.com/vuejs/vue/issues/6857
+    await this.$nextTick()
+  }
+
+  this.preinsertHeight = this.$refs.items.clientHeight
+  for (let message of this.messagesBuffer) {
+    this.messages.push(message)
+  }
+  this.messagesBuffer = []
+  // 等items高度变化
+  await this.$nextTick()
+  this.showNewMessages()
 }
-onMounted(init)
+const refreshCantScrollStartTime = () => {
+  if (!cantScrollStartTime.value) return
+
+  cantScrollStartTime.value = new Date()
+}
+
+**/
 </script>
-<style lang="scss">
-.comment-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 
-  .avatar {
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    border-radius: 100%;
-  }
-
-  .username {
-    color: green;
-
-    &::after {
-      content: ': ';
-    }
-  }
-}
-</style>
+<!-- <style src="@/assets/css/youtube/yt-html.css"></style>
+<style src="@/assets/css/youtube/yt-live-chat-renderer.css"></style>
+<style src="@/assets/css/youtube/yt-live-chat-item-list-renderer.css"></style> -->
