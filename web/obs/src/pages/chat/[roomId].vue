@@ -44,33 +44,60 @@
 import * as types from '../../components/chat/ChatMessageType'
 import { EventClient } from '../../components/chat/EventClient'
 
-const props = withDefaults(
-  defineProps<{
-    maxNumber: number
-    showGiftName?: boolean
-  }>(),
-  {
-    maxNumber: 60,
+interface Props {
+  maxNumber?: number
+  showGiftName?: boolean
+  roomId: number
+}
+
+definePage({
+  props: route => {
+    const result: Props = { roomId: 0 }
+
+    if ('roomId' in route.params) result.roomId = Number(route.params.roomId)
+    if (route.query.showGiftName)
+      result.showGiftName = Boolean(route.query.showGiftName)
+    if (route.query.maxNumber) result.maxNumber = Number(route.query.maxNumber)
+
+    return result
   },
-)
+})
 
-const route = useRoute()
+const props = withDefaults(defineProps<Props>(), {
+  maxNumber: 60,
+})
+
 const user = useUser()
-await user.updateUserInfo()
-const eventClient = new EventClient(
-  // make sense though no need.
-  'roomId' in route.params ? route.params.roomId : `${user.roomId}`,
-  user.userId ?? 0,
-)
+const hot = ref(0)
+const viewed = ref(0)
+const messages = reactive<types.AnyDisplayMessage[]>([])
+const paidMessages = reactive<
+  Array<Exclude<types.AnyDisplayMessage, types.TextMessage>>
+>([])
 
-const messages = eventClient.messages
-// const paidMessages = computed(
-//   () =>
-//     messages.filter(i => i.type !== types.MessageType.TEXT) as Exclude<
-//       types.AnyDisplayMessage,
-//       types.TextMessage
-//     >,
-// )
+const init = async () => {
+  await user.updateUserInfo()
+  const eventClient = new EventClient(
+    props.roomId ?? user.roomId ?? 0,
+    user.userId ?? 0,
+  )
+  eventClient.addEventListener('hot', e => (hot.value = e.detail))
+  eventClient.addEventListener('viewed', e => (viewed.value = e.detail))
+  eventClient.addEventListener('message', e => {
+    const message = e.detail
+    messages.push(message)
+    if (message.type !== types.MessageType.TEXT && message.price > 0) {
+      paidMessages.push(message)
+      setTimeout(
+        () => paidMessages.shift(),
+        (5 + 0.05 * message.price * 1000) * 1000,
+      )
+    }
+    if (messages.length > props.maxNumber) messages.shift()
+  })
+  eventClient.start()
+}
+onMounted(init)
 
 /* original blivechat scrolling control logic
 

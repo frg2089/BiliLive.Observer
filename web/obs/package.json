@@ -12,9 +12,9 @@
     "naive-ui": "^2.43.2",
     "obs-websocket-js": "^5.0.7",
     "openapi-fetch": "^0.14.1",
+    "parse-sse": "^0.1.0",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
-    "sse.js": "^2.7.2",
     "vue": "^3.5.25",
     "vue-router": "^4.6.3"
   },
