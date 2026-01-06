@@ -17,6 +17,8 @@ public sealed class LiveEventServices(BiliLiveClient liveClient, BiliLiveEventCl
         var server = await serverInfo.HostList.GetFastedAsync(cancellationToken);
         var eventClient = clientProvider.Create(roomId, userId, serverInfo.Token, server, cancellationToken);
 
+        cancellationToken.Register(eventClient.Dispose);
+
         await foreach (var packet in eventClient.ConnectAsync(cancellationToken))
         {
             switch (packet)
