@@ -8,9 +8,11 @@
     "fetch-api": "NODE_TLS_REJECT_UNAUTHORIZED=0 openapi-typescript https://localhost:7073/openapi/v1.json -o ./obj/apis.d.ts"
   },
   "dependencies": {
+    "date-fns": "^4.1.0",
     "naive-ui": "^2.43.2",
     "obs-websocket-js": "^5.0.7",
     "openapi-fetch": "^0.15.0",
+    "parse-sse": "^0.1.0",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
     "vue": "^3.5.26",

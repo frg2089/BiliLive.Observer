@@ -1,22 +1,29 @@
 ﻿using System.Net.WebSockets;
+using System.Runtime.CompilerServices;
 
+using BiliLive.Kernel.Danmaku;
+using BiliLive.Kernel.Event.Extensions;
+using BiliLive.Kernel.Event.Models;
 using BiliLive.Kernel.Models;
 
 using Microsoft.Extensions.Logging;
 
-namespace BiliLive.Kernel.Danmaku;
+namespace BiliLive.Kernel.Event;
 
-public sealed class BiliLiveWebSocketDanmakuClient(
+public sealed class BiliLiveWebSocketEventClient(
+    int roomId, long userId, string? token,
     LiveDanmakuServerInfo server,
     BiliApiClient apiClient,
-    ILogger<BiliLiveWebSocketDanmakuClient> logger) : BiliLiveDanmakuClient(logger), IDisposable
+    ILogger<BiliLiveWebSocketEventClient> logger)
+    : BiliLiveEventClient(logger)
 {
     private ClientWebSocket? _client;
+    private Task? _receiving;
+    private Task? _heartbeat;
     private bool _disposedValue;
 
-    public override async Task<Task> EnterRoomAsync(int roomId, long mid = 0, string? token = null, CancellationToken cancellationToken = default)
+    public override async IAsyncEnumerable<BiliLiveEventPacket> ConnectAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await LeaveRoomAsync(cancellationToken);
         _client = new()
         {
             Options =
@@ -28,57 +35,47 @@ public sealed class BiliLiveWebSocketDanmakuClient(
         };
 
         await _client.ConnectAsync(server.WSSUri, apiClient.Client, cancellationToken);
-        var receiving = ReceivingAsync(cancellationToken);
-        var task = await base.EnterRoomAsync(roomId, mid, token, cancellationToken);
 
-        logger.LogInformation("进入房间: {roomId}; 当前用户: {userId}", roomId, mid);
+        _receiving = ReceivingAsync(cancellationToken);
+
+        await foreach (var packet in base.ConnectAsync(cancellationToken))
+            yield return packet;
+
+        if (_heartbeat is not null)
+            await _heartbeat;
+        await _receiving;
+    }
+
+    protected override async Task EnterRoomAsync(CancellationToken cancellationToken = default)
+    {
+        if (_client is null)
+            throw new InvalidOperationException();
+
+        LogEnterRoom(roomId, userId);
         await _client.SendJsonDataAsync(
             new
             {
-                uid = mid,
+                uid = userId,
                 roomid = roomId,
                 protover = 3,
-                buvid = apiClient.GetBuvid3(),
+                // buvid = apiClient.GetBuvid3(),
                 scene = "room",
                 platform = "web",
                 type = 2,
                 key = token,
             },
-            BiliLiveOperation.EnterRoom,
+            BiliLiveEventOperation.EnterRoom,
             cancellationToken);
 
-        await task;
-
-        _ = HeartBeatLoopAsync(cancellationToken);
-
-        return receiving;
-    }
-
-    public override async Task LeaveRoomAsync(CancellationToken cancellationToken = default)
-    {
-        if (_client is null)
-            return;
-
-        await _client.CloseAsync(WebSocketCloseStatus.NormalClosure, "bye", cancellationToken);
-        _client.Dispose();
-        _client = null;
-    }
-
-    private async Task HeartBeatAsync(CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(_client);
-
-        logger.LogTrace("发送心跳包");
-        await _client.SendJsonDataAsync<object>(null, BiliLiveOperation.Heartbeat, cancellationToken);
-    }
-
-    private async Task HeartBeatLoopAsync(CancellationToken cancellationToken = default)
-    {
-        while (!cancellationToken.IsCancellationRequested)
+        _heartbeat = Task.Run(async () =>
         {
-            await HeartBeatAsync(cancellationToken);
-            await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
-        }
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                logger.LogTrace("发送心跳包");
+                await _client.SendJsonDataAsync<object>(null, BiliLiveEventOperation.Heartbeat, cancellationToken);
+                await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+            }
+        }, cancellationToken);
     }
 
     private async Task ReceivingAsync(CancellationToken cancellationToken = default)
@@ -87,7 +84,7 @@ public sealed class BiliLiveWebSocketDanmakuClient(
 
         await using MemoryStream ms = new(4096);
         byte[] buffer = new byte[16];
-        while (true)
+        while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
@@ -103,7 +100,7 @@ public sealed class BiliLiveWebSocketDanmakuClient(
                     await ms.FlushAsync(cancellationToken);
                     ms.Seek(0, SeekOrigin.Begin);
                     var data = ms.ToArray();
-                    ReceivedPack(BiliLivePackHeader.Parse(data), data.AsSpan(16));
+                    await ReceivedPackAsync(BiliLiveEventPackHeader.Parse(data), data.AsMemory(16));
                     ms.SetLength(0);
                 }
             }
@@ -124,33 +121,16 @@ public sealed class BiliLiveWebSocketDanmakuClient(
         }
     }
 
-    #region Dispose
-
-    private void Dispose(bool disposing)
+    protected override void Dispose(bool disposing)
     {
         if (_disposedValue)
-
             return;
-
+        base.Dispose(disposing);
         if (disposing)
         {
             _client?.Dispose();
         }
+
         _disposedValue = true;
     }
-
-    // ~BiliLiveWebSocketDanmakuClient()
-    // {
-    //     // 不要更改此代码。请将清理代码放入“Dispose(bool disposing)”方法中
-    //     Dispose(disposing: false);
-    // }
-
-    public void Dispose()
-    {
-        // 不要更改此代码。请将清理代码放入“Dispose(bool disposing)”方法中
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
-    }
-
-    #endregion Dispose
 }

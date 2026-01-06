@@ -16,8 +16,8 @@ public class BiliApiResultException : BiliApiException
         Code = code;
         RawMessage = message;
         RawResult = raw;
-        raw.TryGetProperty("data", out var data);
-        DataResult = data;
+        if (raw.TryGetProperty("data", out JsonElement data))
+            DataResult = data;
     }
 
     public BiliApiResultException(int code, JsonElement raw, string message) : base($"[{code}] {message}")
@@ -25,8 +25,8 @@ public class BiliApiResultException : BiliApiException
         Code = code;
         RawMessage = message;
         RawResult = raw;
-        raw.TryGetProperty("data", out var data);
-        DataResult = data;
+        if (raw.TryGetProperty("data", out JsonElement data))
+            DataResult = data;
     }
 
     public BiliApiResultException(int code, JsonElement raw, string message, Exception inner) : base($"[{code}] {message}", inner)
@@ -34,7 +34,7 @@ public class BiliApiResultException : BiliApiException
         Code = code;
         RawMessage = message;
         RawResult = raw;
-        raw.TryGetProperty("data", out var data);
-        DataResult = data;
+        if (raw.TryGetProperty("data", out JsonElement data))
+            DataResult = data;
     }
 }

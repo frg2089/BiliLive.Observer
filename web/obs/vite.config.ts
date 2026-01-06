@@ -21,6 +21,7 @@ export default defineConfig({
           ],
         },
       ],
+      dirs: ['src/stores', 'src/utils', 'src/types'],
       dts: './obj/auto-imports.d.ts',
     }),
     Components({

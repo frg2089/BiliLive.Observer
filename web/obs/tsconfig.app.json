@@ -2,7 +2,13 @@
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "compilerOptions": {
     "composite": true,
-    "types": ["vite/client", "unplugin-vue-router/client", "@types/obs-studio"]
+    "types": ["vite/client", "unplugin-vue-router/client", "@types/obs-studio"],
+    "lib": [
+      "ES2024",
+      "DOM",
+      "DOM.Iterable",
+      "DOM.AsyncIterable"
+    ]
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "obj/**/*.d.ts"]
 }

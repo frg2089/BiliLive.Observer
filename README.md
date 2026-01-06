@@ -8,7 +8,7 @@
 
 [下崽指路](https://github.com/frg2089/BiliLive.Observer/releases/latest)
 
-另需依赖：[ASP.NET Core 9.0](https://dotnet.microsoft.com/zh-cn/download/dotnet/thank-you/runtime-aspnetcore-9.0.7-windows-hosting-bundle-installer) ←点击下载安装运行时整合包 :)
+另需依赖：[ASP.NET Core 10.0](https://dotnet.microsoft.com/zh-cn/download/dotnet/thank-you/runtime-aspnetcore-10.0.0-windows-hosting-bundle-installer) ←点击下载安装运行时整合包 :)
 
 ---
 

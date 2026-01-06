@@ -1,13 +1,13 @@
 ﻿using System.Net;
 using System.Net.Mime;
-using System.Net.NetworkInformation;
 using System.Text.Json;
 
 using BiliLive.Kernel;
-using BiliLive.Kernel.Danmaku;
+using BiliLive.Kernel.Event;
 using BiliLive.Kernel.Models;
 using BiliLive.Service;
 using BiliLive.Service.Model;
+using BiliLive.Service.Services;
 
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -42,6 +42,7 @@ CookieContainer cookie = new();
 }
 
 // Add services to the container.
+builder.Services.AddHttpLogging();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
@@ -66,7 +67,8 @@ builder.Services.AddHttpClient<BiliApiClient, BiliApiClient>((client, provider) 
         return handler;
     });
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
-builder.Services.AddTransient<BiliLiveDanmakuClientProvider>();
+builder.Services.AddTransient<LiveEventServices>();
+builder.Services.AddTransient<BiliLiveEventClientProvider>();
 builder.Services.AddTransient<BiliLoginClient>();
 builder.Services.AddTransient<BiliLiveClient>();
 builder.Services.AddOptions<BiliLiveClientOptions>().BindConfiguration("BiliLive");
@@ -80,6 +82,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseHttpLogging();
 
 app.UseStaticFiles();
 //app.MapStaticAssets();
@@ -218,49 +221,7 @@ chat.MapGet("/event", async (
     HttpContext context,
     [FromQuery] int roomId,
     [FromQuery] long userId,
-    [FromServices] BiliLiveClient live,
-    [FromServices] BiliLiveDanmakuClientProvider danmakuClientProvider,
-    CancellationToken cancellationToken) =>
-{
-    var serverInfo = await live.GetDanmakuInfoAsync(roomId, cancellationToken: cancellationToken);
-
-    using Ping ping = new();
-    Dictionary<LiveDanmakuServerInfo, double> delays = new(serverInfo.HostList.Count);
-    foreach (var item in serverInfo.HostList)
-    {
-        const int loopCount = 3;
-
-        var results = await Task.WhenAll(Enumerable.Range(1, loopCount).Select(_ => ping.SendPingAsync(item.Host)));
-
-        if (results.Count(i => i.Status is IPStatus.Success) < (loopCount + 1) / 2)
-            continue;
-
-        delays[item] = results.Average(i => i.RoundtripTime);
-    }
-
-    var server = delays.MinBy(i => i.Value).Key;
-
-    var danmaku = danmakuClientProvider.Create(server);
-
-    context.Response.ContentType = MediaTypeNames.Text.EventStream;
-    danmaku.ReceivedHot += async (_, e) =>
-    {
-        await context.Response.WriteAsync("event: hot\r\n", cancellationToken);
-        await context.Response.WriteAsync($"data: {e.Hot}\r\n", cancellationToken);
-        await context.Response.WriteAsync($"\r\n");
-        await context.Response.Body.FlushAsync();
-    };
-    danmaku.ReceivedNotification += async (_, e) =>
-    {
-        await context.Response.WriteAsync("event: notification\r\n", cancellationToken);
-        await context.Response.WriteAsync($"data: {e.Data}\r\n", cancellationToken);
-        await context.Response.WriteAsync($"\r\n");
-        await context.Response.Body.FlushAsync();
-    };
-
-    var mainloop = await danmaku.EnterRoomAsync(roomId, userId, serverInfo.Token, cancellationToken: cancellationToken);
-    await mainloop;
-    await danmaku.LeaveRoomAsync(cancellationToken);
-}).Produces(StatusCodes.Status206PartialContent, contentType: MediaTypeNames.Text.EventStream);
+    [FromServices] LiveEventServices liveEventServices,
+    CancellationToken cancellationToken) => TypedResults.ServerSentEvents(liveEventServices.GetLiveEventsAsync(roomId, userId, cancellationToken)));
 
 await app.RunAsync();

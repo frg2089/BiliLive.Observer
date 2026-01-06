@@ -1,5 +1,5 @@
 <template>
-  <NConfigProvider :theme>
+  <NConfigProvider :theme="theme.naiveTheme">
     <NMessageProvider>
       <RouterView />
     </NMessageProvider>
@@ -7,8 +7,7 @@
 </template>
 
 <script lang="ts" setup>
-import { darkTheme, useOsTheme } from 'naive-ui'
+import { useTheme } from './stores/theme'
 
-const osTheme = useOsTheme()
-const theme = computed(() => (osTheme.value === 'dark' ? darkTheme : null))
+const theme = useTheme()
 </script>

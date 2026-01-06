@@ -1,6 +1,6 @@
-﻿namespace BiliLive.Kernel.Danmaku;
+﻿namespace BiliLive.Kernel.Event.Models;
 
-public enum BiliLivePackBodyType : short
+public enum BiliLiveEventPackBodyType : short
 {
     /// <summary>
     /// 普通包 (正文不使用压缩)

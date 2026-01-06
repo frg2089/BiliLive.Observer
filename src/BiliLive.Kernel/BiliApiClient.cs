@@ -13,7 +13,7 @@ namespace BiliLive.Kernel;
 
 public sealed class BiliApiClient
 {
-    internal const string UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36";
+    public const string UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36";
     private readonly ILogger<BiliApiClient> _logger;
 
     public BiliApiClient(HttpClient client, CookieContainer cookie, ILogger<BiliApiClient> logger)
