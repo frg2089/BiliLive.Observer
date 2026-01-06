@@ -41,8 +41,8 @@
 </template>
 
 <script lang="ts" setup>
-import * as types from '../../components/chat/ChatMessageType'
-import { EventClient } from '../../components/chat/EventClient'
+import * as types from '../../../components/chat/ChatMessageType'
+import { EventClient } from '../../../components/chat/EventClient'
 
 interface Props {
   maxNumber?: number
