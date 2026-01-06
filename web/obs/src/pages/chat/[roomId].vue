@@ -2,8 +2,11 @@
   <yt-live-chat-renderer
     class="style-scope yt-live-chat-app"
     style="--scrollbar-width: 11px"
-    absolute bottom-0 max-h-screen
-    @mousemove="refreshCantScrollStartTime">
+    absolute
+    bottom-0
+    max-h-screen
+    w-full
+    overflow-hidden>
     <Ticker
       class="style-scope yt-live-chat-renderer"
       v-model:messages="paidMessages"
@@ -14,8 +17,7 @@
       <div
         ref="scroller"
         id="item-scroller"
-        class="style-scope yt-live-chat-item-list-renderer animated"
-        @scroll="onScroll">
+        class="style-scope yt-live-chat-item-list-renderer animated">
         <div
           ref="itemOffset"
           id="item-offset"
@@ -24,10 +26,8 @@
             ref="items"
             id="items"
             class="style-scope yt-live-chat-item-list-renderer"
-            style="overflow: hidden"
-            :style="{
-              transform: `translateY(${Math.floor(scrollPixelsRemaining)}px)`,
-            }">
+            max-h-screen
+            overflow-y-scroll>
             <ChatItemBox
               v-for="message in messages"
               :key="message.id"
@@ -47,6 +47,7 @@ import { EventClient } from '../../components/chat/EventClient'
 interface Props {
   maxNumber?: number
   showGiftName?: boolean
+  useCss?: string
   roomId: number
 }
 
@@ -58,6 +59,7 @@ definePage({
     if (route.query.showGiftName)
       result.showGiftName = Boolean(route.query.showGiftName)
     if (route.query.maxNumber) result.maxNumber = Number(route.query.maxNumber)
+    if (route.query.useCss) result.useCss = route.query.useCss.toString()
 
     return result
   },
@@ -78,6 +80,13 @@ const paidMessages = reactive<
 const items = useTemplateRef('items')
 
 const init = async () => {
+  if (props.useCss) {
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = props.useCss
+    document.head.appendChild(link)
+  }
+
   await user.updateUserInfo()
   const eventClient = new EventClient(
     props.roomId ?? user.roomId ?? 0,
@@ -99,8 +108,10 @@ const init = async () => {
 
     await nextTick()
 
-    items.value?.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "center", })
-    
+    items.value?.lastElementChild?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    })
   })
   eventClient.start()
 }
