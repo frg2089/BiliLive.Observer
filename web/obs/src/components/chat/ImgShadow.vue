@@ -11,12 +11,13 @@
       alt=""
       :height="height"
       :width="width"
-      :src="showImgUrl"
+      :src="path(`/bili/get?url=${encodeURIComponent(showImgUrl)}`)"
       @error="onLoadError" />
   </yt-img-shadow>
 </template>
 
 <script lang="ts" setup>
+import { pathChecker } from '../../api';
 import * as constants from './constants'
 
 const props = defineProps<{
@@ -35,6 +36,8 @@ const onLoadError = () => {
 
   showImgUrl.value = constants.DEFAULT_AVATAR_URL
 }
+
+const path = pathChecker
 </script>
 
 <!-- <style src="@/assets/css/youtube/yt-img-shadow.css"></style> -->

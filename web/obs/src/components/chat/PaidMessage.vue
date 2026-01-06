@@ -1,6 +1,7 @@
 <template>
   <yt-live-chat-paid-message-renderer
     class="style-scope yt-live-chat-item-list-renderer"
+    flex items-center my-2
     allow-animations
     :show-only-header="!content"
     :style="{

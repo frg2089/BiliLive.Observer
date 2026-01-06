@@ -2,7 +2,7 @@
   <yt-live-chat-renderer
     class="style-scope yt-live-chat-app"
     style="--scrollbar-width: 11px"
-    hide-timestamps
+    absolute bottom-0 max-h-screen
     @mousemove="refreshCantScrollStartTime">
     <Ticker
       class="style-scope yt-live-chat-renderer"
@@ -75,6 +75,8 @@ const paidMessages = reactive<
   Array<Exclude<types.AnyDisplayMessage, types.TextMessage>>
 >([])
 
+const items = useTemplateRef('items')
+
 const init = async () => {
   await user.updateUserInfo()
   const eventClient = new EventClient(
@@ -83,7 +85,7 @@ const init = async () => {
   )
   eventClient.addEventListener('hot', e => (hot.value = e.detail))
   eventClient.addEventListener('viewed', e => (viewed.value = e.detail))
-  eventClient.addEventListener('message', e => {
+  eventClient.addEventListener('message', async e => {
     const message = e.detail
     messages.push(message)
     if (message.type !== types.MessageType.TEXT && message.price > 0) {
@@ -94,6 +96,11 @@ const init = async () => {
       )
     }
     if (messages.length > props.maxNumber) messages.shift()
+
+    await nextTick()
+
+    items.value?.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "center", })
+    
   })
   eventClient.start()
 }
@@ -103,7 +110,6 @@ onMounted(init)
 
 const scroller = useTemplateRef('scroller')
 const itemOffset = useTemplateRef('itemOffset')
-const items = useTemplateRef('items')
 
 // 发送消息时间间隔范围
 const MESSAGE_MIN_INTERVAL = 80

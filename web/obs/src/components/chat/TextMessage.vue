@@ -1,5 +1,6 @@
 <template>
   <yt-live-chat-text-message-renderer
+    flex items-center my-2
     :author-type="authorTypeText"
     :blc-guard-level="privilegeType">
     <ImgShadow

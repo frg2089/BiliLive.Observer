@@ -75,7 +75,12 @@ export class EventClient {
   }
 
   private splitContent(packet: any): types.AnyContentPart[] {
-    return []
+    return [
+      {
+        type: types.ContentPartType.TEXT,
+        text: packet.info[1],
+      }
+    ]
   }
 
   // damn packet !!!!!!!!!!!!!!!!!!
