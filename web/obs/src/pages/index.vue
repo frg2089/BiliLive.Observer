@@ -164,12 +164,9 @@ const init = async () => {
   obs.connect()
   loading.value = true
   try {
-    await Promise.all([
-      user.updateUserInfo(),
-      user.updateAreas(),
-      updateRoomInfoByUserId(),
-      updateRoomInfo(),
-    ])
+    await user.updateUserInfo()
+    await Promise.all([user.updateAreas(), updateRoomInfoByUserId()])
+    await updateRoomInfo()
 
     if (!user.data?.isLogin) {
       router.push('/login')
