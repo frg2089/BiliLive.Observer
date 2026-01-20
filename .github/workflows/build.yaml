@@ -63,7 +63,14 @@ jobs:
     steps:
       - name: Download a Build Artifact
         shell: pwsh
-        run: curl '${{ needs.build.outputs.artifact }}' -o BiliLive.Observer.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |-
+          curl `
+            -H "Accept: application/vnd.github+json"
+            -H "Authorization: Bearer $env:GITHUB_TOKEN"
+            '${{ needs.build.outputs.artifact }}' `
+            -o BiliLive.Observer.zip
 
       - name: Release
         uses: softprops/action-gh-release@v2
