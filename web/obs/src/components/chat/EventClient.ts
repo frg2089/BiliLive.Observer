@@ -30,6 +30,7 @@ export class EventClient {
   }
 
   public start = async () => {
+    // TODO: 后端有概率 ERR_INCOMPLETE_CHUNKED_ENCODING
     const res = await client.GET('/bili/live/chat/event', {
       params: {
         query: {
@@ -75,21 +76,13 @@ export class EventClient {
   }
 
   private splitContent(packet: any): types.AnyContentPart[] {
+    // TODO: 似乎不太严谨……？
     return [
       {
         type: types.ContentPartType.TEXT,
         text: packet.info[1],
       }
     ]
-  }
-
-  // damn packet !!!!!!!!!!!!!!!!!!
-  private fetchAvatar(uid: string): string {
-    return 'placeholder'
-  }
-
-  private fetchGiftIcon(giftId: number): string {
-    return 'placeholder'
   }
 
   private dispatch(packet: any) {
@@ -108,12 +101,12 @@ export class EventClient {
           content: packet.info[1],
           authorType: this.identity(packet),
           contentParts: this.splitContent(packet),
-          // TODO: medal info
-          medalLevel: 0,
-          medalName: '',
+          medalLevel: packet.info[0][15].user.medal.level,
+          medalName: packet.info[0][15].user.medal.name,
         })
         break
       case 'SEND_GIFT':
+        // TODO: 获取当前直播间礼物配置（可作为运行时 cache 备查）
         this.push({
           type: types.MessageType.GIFT,
           id: EventClient.nextId(),
@@ -129,10 +122,11 @@ export class EventClient {
           privilegeType: packet.data.guard_level,
           medalLevel: packet.data.medal_info.medal_level,
           medalName: packet.data.medal_info.medal_name,
-          giftIconUrl: this.fetchGiftIcon(packet.data.giftId),
+          giftIconUrl: 'placeholder',
         })
         break
       case 'GUARD_BUY':
+        // TODO: 获取指定用户头像和粉丝牌
         this.push({
           type: types.MessageType.MEMBER,
           id: EventClient.nextId(),
@@ -142,8 +136,8 @@ export class EventClient {
           num: packet.data.num,
           privilegeType: packet.data.guard_level,
           price: packet.data.price / 1000,
-          avatarUrl: this.fetchAvatar(`${packet.data.uid}`),
-          unit: '月', // ...
+          avatarUrl: 'placeholder',
+          unit: '月',
           // TODO: medal info
           medalLevel: 0,
           medalName: '',
@@ -165,8 +159,26 @@ export class EventClient {
           medalName: packet.data.medal_info.medal_name,
         })
         break
-      case 'INTERACT_WORD':
-        // TODO: diff from obs including. web browser only.
+      case 'INTERACT_WORD_V2':
+        // TODO: 解码数据包，根据`msg_type`分别设定不同 content
+        const obs = useOBS()
+        if (!obs.connected) {
+          // TODO: 直接推送纯文本消息
+          // this.push({
+          //   type: types.MessageType.TEXT,
+          //   id: EventClient.nextId(),
+          //   avatarUrl: packet.info[0][15].user.base.face,
+          //   time: new Date(),
+          //   authorName: packet.info[2][1],
+          //   uid: `${packet.info[2][0]}`,
+          //   privilegeType: packet.info[7],
+          //   content: packet.info[1],
+          //   authorType: this.identity(packet),
+          //   contentParts: this.splitContent(packet),
+          //   medalLevel: packet.info[0][15].user.medal.level,
+          //   medalName: packet.info[0][15].user.medal.name,
+          // })
+        }
         break
       case 'WATCHED_CHANGE':
         this._eventSource.dispatchEvent(
