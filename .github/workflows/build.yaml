@@ -67,8 +67,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |-
           curl `
-            -H "Accept: application/vnd.github+json"
-            -H "Authorization: Bearer $env:GITHUB_TOKEN"
+            -H "Accept: application/vnd.github+json" `
+            -H "Authorization: Bearer $env:GITHUB_TOKEN" `
             '${{ needs.build.outputs.artifact }}' `
             -o BiliLive.Observer.zip
 
