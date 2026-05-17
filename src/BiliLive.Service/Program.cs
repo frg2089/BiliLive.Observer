@@ -149,7 +149,7 @@ async Task<Results<Ok<StartLiveData>, ProblemHttpResult>> ([FromBody] StartLiveR
         {
             return TypedResults.Ok(await live.StartStreamAsync(request.RoomId, request.AreaId, cancellationToken: cancellationToken));
         }
-        catch (BiliApiResultException e) when (e.Code is 60024)
+        catch (BiliApiResultException e) when (e.Code is 60024 or 60043)
         {
             var result = e.DataResult.Deserialize<StartLiveData>()
                 ?? throw new BiliApiException("无法反序列化为对象", e);

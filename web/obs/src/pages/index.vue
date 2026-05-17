@@ -184,7 +184,14 @@ const start = async () => {
       body: liveRoom,
     })
 
-    if (res.error?.title === '60024') {
+    if (res.error?.title === '60043') {
+      router.push({
+        name: '/face-auth',
+        query: {
+          qr: `https://www.bilibili.com/blackboard/live/face-auth-middle.html?source_event=400&mid=${user.data?.mid}`,
+        },
+      })
+    } else if (res.error?.title === '60024') {
       if ('qr' in res.error) {
         router.push({
           name: '/face-auth',
