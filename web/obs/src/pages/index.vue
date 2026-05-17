@@ -40,7 +40,7 @@
       <NCollapse>
         <NCollapseItem title="直播间设置" name="1">
           <NForm :model="liveRoom" size="small" mx-auto px-4>
-            <NFormItem v-if="cover" label="直播间封面">
+            <NFormItem label="直播间封面">
               <Cover :cover />
             </NFormItem>
             <NFormItem
@@ -103,7 +103,7 @@ const loading = ref(false)
 const btnLoading = ref(false)
 const living = ref(false)
 
-const cover = ref<string>()
+const cover = ref<string>('')
 const liveRoom = reactive({
   roomId: 0,
   areaId: 0,

@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BiliLive.Kernel;
 
-public sealed class BiliApiClient
+public sealed partial class BiliApiClient
 {
     public const string UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36";
     private readonly ILogger<BiliApiClient> _logger;
@@ -45,12 +45,10 @@ public sealed class BiliApiClient
     internal CookieContainer CookieContainer { get; }
     internal HttpClient Client { get; }
 
-    private string? _traceIdentifier;
-
     public string TraceIdentifier
     {
-        get => _traceIdentifier ??= Guid.CreateVersion7().ToString();
-        set => _traceIdentifier = value;
+        get => field ??= Guid.CreateVersion7().ToString();
+        set;
     }
 
     /// <summary>
@@ -64,7 +62,9 @@ public sealed class BiliApiClient
     public async Task<T> SendAsync<T>(HttpRequestMessage request, CancellationToken cancellationToken = default)
     {
         var id = TraceIdentifier;
-        _logger.LogInformation("[{id}] 请求: {url}", id, request.RequestUri?.ToString().Split('?')[0]);
+        LogRequest(id, request.RequestUri?.ToString().Split('?')[0]);
+        LogRequestDetail(id, request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken));
+
         var response = await Client.SendAsync(request, cancellationToken);
 
         response.EnsureSuccessStatusCode();
@@ -75,14 +75,7 @@ public sealed class BiliApiClient
 
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
 
-        _logger.LogDebug(
-            """
-            [{id}] 响应主体
-
-            {json}
-            """,
-            id,
-            json);
+        LogResponseDetail(id, json);
 
         var data = json.Deserialize<BiliApiResult<JsonElement>>() ?? throw new BiliApiException("Failed to parse response.");
 
@@ -109,27 +102,30 @@ public sealed class BiliApiClient
     public async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest requestBody, CancellationToken cancellationToken = default)
         => await SendAsync<TResponse>(HttpMethod.Post, url, JsonContent.Create(requestBody), cancellationToken);
 
-    public async Task<T> PostFormAsync<T>(string url, IEnumerable<KeyValuePair<string, object?>> formData, CancellationToken cancellationToken = default)
+    public async Task<T> PostFormDataAsync<T>(string url, IEnumerable<KeyValuePair<string, object?>> formData, CancellationToken cancellationToken = default)
     {
         var data = formData.Where(i => i.Value is not null).Cast<KeyValuePair<string, object>>();
-        HttpContent content;
-        if (formData.Any(i => i.Value is FileContent))
+
+        MultipartFormDataContent form = new($"------Bilibili-Live-{Guid.NewGuid()}");
+        foreach (var item in data)
         {
-            MultipartFormDataContent form = new($"------Bilibili-Live-{Guid.NewGuid()}");
-            content = form;
-            foreach (var item in data)
-            {
-                if (item.Value is FileContent file)
-                    form.Add(file.GetContent(), item.Key, file.FileName);
-                else
-                    form.Add(new StringContent(item.Value.ToString() ?? string.Empty, Encoding.UTF8), item.Key);
-            }
-        }
-        else
-        {
-            content = new FormUrlEncodedContent(data.Select(i => KeyValuePair.Create(i.Key, i.Value.ToString())));
+            if (item.Value is FileContent file)
+                form.Add(file.GetContent(), item.Key, file.FileName);
+            else
+                form.Add(new StringContent(item.Value.ToString() ?? string.Empty, Encoding.UTF8), item.Key);
         }
 
+        return await SendAsync<T>(HttpMethod.Post, url, form, cancellationToken);
+    }
+
+    public async Task<T> PostFormAsync<T>(string url, IEnumerable<KeyValuePair<string, object?>> formData, CancellationToken cancellationToken = default)
+    {
+        if (formData.Any(i => i.Value is FileContent))
+            return await PostFormDataAsync<T>(url, formData, cancellationToken);
+
+        var data = formData.Where(i => i.Value is not null).Cast<KeyValuePair<string, object>>();
+
+        FormUrlEncodedContent content = new(data.Select(i => KeyValuePair.Create(i.Key, i.Value.ToString())));
         return await SendAsync<T>(HttpMethod.Post, url, content, cancellationToken);
     }
 
@@ -239,4 +235,26 @@ public sealed class BiliApiClient
             ["payload"] = payload,
         }, cancellationToken);
     }
+
+
+    [LoggerMessage(LogLevel.Information, "[{id}] 请求: {url}")]
+    private partial void LogRequest(string id, string? url);
+
+    [LoggerMessage(
+        LogLevel.Debug,
+        """
+        [{id}] 请求主体
+
+        {data}
+        """)]
+    private partial void LogRequestDetail(string id, string? data);
+
+    [LoggerMessage(
+        LogLevel.Debug,
+        """
+        [{id}] 响应主体
+
+        {json}
+        """)]
+    private partial void LogResponseDetail(string id, JsonElement json);
 }
