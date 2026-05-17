@@ -17,7 +17,7 @@
 </template>
 
 <script lang="ts" setup>
-import { pathChecker } from '../../api';
+import { pathChecker } from '../../api'
 import * as constants from './constants'
 
 const props = defineProps<{

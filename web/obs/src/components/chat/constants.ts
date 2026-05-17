@@ -8,9 +8,11 @@ import type {
 } from './ChatMessageType'
 
 /**
- * 获取等级对应的文字
- * @param guardLevel
+ * @description 获取等级对应的文字
+ *
  * @deprecated 改用 `GuardLevel.getText`
+ *
+ * @param guardLevel
  */
 export const getShowGuardLevelText = (guardLevel: GuardLevel) =>
   GuardLevel.getText(guardLevel)

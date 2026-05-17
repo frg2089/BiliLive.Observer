@@ -1,6 +1,6 @@
 packages:
   - web/*
 
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - esbuild
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true

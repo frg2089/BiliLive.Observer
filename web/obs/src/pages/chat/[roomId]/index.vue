@@ -88,10 +88,7 @@ const init = async () => {
   }
 
   await user.updateUserInfo()
-  const eventClient = new EventClient(
-    props.roomId,
-    user.userId ?? 0,
-  )
+  const eventClient = new EventClient(props.roomId, user.userId ?? 0)
   eventClient.addEventListener('hot', e => (hot.value = e.detail))
   eventClient.addEventListener('viewed', e => (viewed.value = e.detail))
   eventClient.addEventListener('message', async e => {

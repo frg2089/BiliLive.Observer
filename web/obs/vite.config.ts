@@ -3,8 +3,8 @@ import UnoCSS from 'unocss/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import { NaiveUiResolver } from 'unplugin-vue-components/resolvers'
 import Components from 'unplugin-vue-components/vite'
-import Router from 'unplugin-vue-router/vite'
 import { defineConfig } from 'vite'
+import VueRouter from 'vue-router/vite'
 
 export default defineConfig({
   plugins: [
@@ -28,7 +28,7 @@ export default defineConfig({
       dts: './obj/components.d.ts',
       resolvers: [NaiveUiResolver()],
     }),
-    Router({
+    VueRouter({
       dts: './obj/typed-router.d.ts',
     }),
     UnoCSS(),

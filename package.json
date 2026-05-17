@@ -1,48 +1,23 @@
 {
   "name": "@bililive/workspace",
   "version": "0.0.0",
+  "private": true,
+  "keywords": [],
+  "license": "MIT",
   "author": {
     "name": "frg2089",
     "email": "frg2089@outlook.com",
     "url": "https://blog.shimakaze.dev"
   },
-  "license": "MIT",
-  "private": true,
-  "packageManager": "pnpm@10.27.0+sha512.72d699da16b1179c14ba9e64dc71c9a40988cbdc65c264cb0e489db7de917f20dcf4d64d8723625f2969ba52d4b7e2a1170682d9ac2a5dcaeaab732b7e16f04a",
-  "keywords": [],
+  "type": "module",
   "scripts": {
-    "format": "prettier --write ."
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check"
   },
   "devDependencies": {
-    "prettier": "^3.7.4",
-    "prettier-plugin-imports": "^4.3.3",
-    "prettier-plugin-pkg": "^0.21.2",
-    "typescript": "^5.9.3"
+    "@types/node": "^25.8.0",
+    "oxfmt": "^0.50.0",
+    "typescript": "^6.0.3"
   },
-  "prettier": {
-    "printWidth": 80,
-    "tabWidth": 2,
-    "useTabs": false,
-    "semi": false,
-    "singleQuote": true,
-    "quoteProps": "as-needed",
-    "jsxSingleQuote": false,
-    "trailingComma": "all",
-    "bracketSpacing": true,
-    "bracketSameLine": true,
-    "arrowParens": "avoid",
-    "endOfLine": "auto",
-    "importOrder": [
-      "<BUILTIN_MODULES>",
-      " ",
-      "^vue$|^vuepress",
-      "<THIRD_PARTY_MODULES>",
-      " ",
-      "^[.]"
-    ],
-    "plugins": [
-      "prettier-plugin-imports",
-      "prettier-plugin-pkg"
-    ]
-  }
+  "packageManager": "pnpm@11.1.1+sha512.d1fdf5f73c617b64fa1a56a81c3c8dfe0e966e33a6010aa256b517ae77be21d93e05affc0de1a83b0e4f29d569f68b446ae8f068cd7247c0bb3df0fb4d7bdf9a"
 }

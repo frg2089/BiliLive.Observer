@@ -37,9 +37,9 @@ export class EventClient {
           userId: this.userId,
         },
       },
-      parseAs: 'stream'
+      parseAs: 'stream',
     })
-    
+
     for await (const event of parseServerSentEvents(res.response)) {
       console.log(`事件 ${event.type}`)
 
@@ -79,7 +79,7 @@ export class EventClient {
       {
         type: types.ContentPartType.TEXT,
         text: packet.info[1],
-      }
+      },
     ]
   }
 

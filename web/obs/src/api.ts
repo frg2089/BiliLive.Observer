@@ -7,8 +7,10 @@ export const client = createClient<paths>({
 })
 
 /**
- * 用于检查 API 合法性的工具
+ * @description 用于检查 API 合法性的工具
+ *
  * @param path
+ *
  * @returns
  */
 export const pathChecker = (path: keyof paths | `${keyof paths}?${string}`) =>

@@ -71,10 +71,10 @@
 </template>
 
 <script lang="ts" setup>
+import { NScrollbar } from 'naive-ui'
 // import * as chatConfig from '@/api/chatConfig'
 // import { formatCurrency } from '@/utils'
 import { TransitionGroup } from 'vue'
-import { NScrollbar } from 'naive-ui'
 
 import * as types from './ChatMessageType'
 import {

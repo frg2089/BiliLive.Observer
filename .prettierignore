@@ -1,5 +1,0 @@
-pnpm-lock.yaml
-packages/**/*/dist/
-global.json
-src/*
-dist
