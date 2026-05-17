@@ -47,7 +47,7 @@ jobs:
         name: Collect artifact
         uses: actions/upload-artifact@v7
         with:
-          name: artifact
+          name: BiliLive.Observer
           path: |
             ./artifacts/publish/BiliLive.Service/release/*
           retention-days: 7
@@ -62,15 +62,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download a Build Artifact
-        shell: pwsh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |-
-          curl `
-            -H "Accept: application/vnd.github+json" `
-            -H "Authorization: Bearer $env:GITHUB_TOKEN" `
-            '${{ needs.build.outputs.artifact }}' `
-            -o BiliLive.Observer.zip
+        uses: actions/download-artifact@v8
+        with:
+          skip-decompress: true
+          name: BiliLive.Observer
 
       - name: Release
         uses: softprops/action-gh-release@v3
