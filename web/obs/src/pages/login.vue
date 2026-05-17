@@ -18,7 +18,7 @@
           color="#ff6699"
           background-color="#00000000"
           type="svg"
-          error-correction-level="H"
+          error-correction-level="M"
           justify-center
           items-center
           @click="init"
